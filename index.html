@@ -2709,6 +2709,7 @@
             gameRunning = false;
             playSound('gameOver');
             if (musicPlaying) toggleMusic();
+            stopBossMusic(); // Stop boss music too
 
             const cfg = difficulties[difficulty];
             const finalScore = Math.floor(score * cfg.scoreMultiplier);
