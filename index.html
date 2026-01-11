@@ -526,33 +526,33 @@
         </div>
 
         <div id="createRoomScreen" class="overlay" style="display:none;">
-            <h1>CREATE ROOM</h1>
-            <p style="color:#888;font-size:9px;margin-bottom:15px;">Waiting for ICE candidates...</p>
+            <h1>CREATE ROOM (HOST)</h1>
+            <p style="color:#888;font-size:9px;margin-bottom:15px;">Step 1: Copy OFFER code and send to friend</p>
             <div id="hostCodeBox" style="display:none;margin-bottom:15px;">
-                <p style="color:#0f0;font-size:10px;">Share this code with your friend:</p>
+                <p style="color:#0f0;font-size:10px;">📤 YOUR OFFER CODE:</p>
                 <div style="background:#111;border:2px solid #0f0;padding:10px;margin:10px 0;max-width:400px;word-break:break-all;font-size:8px;max-height:80px;overflow-y:auto;" id="hostCode"></div>
-                <button class="menu-option" onclick="copyCode('hostCode')" style="font-size:9px;padding:8px 15px;">📋 COPY CODE</button>
+                <button class="menu-option" onclick="copyCode('hostCode')" style="font-size:9px;padding:8px 15px;">📋 COPY OFFER</button>
             </div>
             <div style="margin-top:20px;">
-                <p style="color:#ff0;font-size:10px;">Paste friend's answer code:</p>
-                <textarea id="answerCodeInput" style="width:350px;height:60px;margin:10px 0;padding:8px;font-family:monospace;font-size:8px;background:#111;color:#ff0;border:2px solid #ff0;"></textarea><br>
+                <p style="color:#ff0;font-size:10px;">Step 2: Paste friend's ANSWER code:</p>
+                <textarea id="answerCodeInput" style="width:350px;height:60px;margin:10px 0;padding:8px;font-family:monospace;font-size:8px;background:#111;color:#ff0;border:2px solid #ff0;" placeholder="Paste ANSWER code here..."></textarea><br>
                 <button class="menu-option" onclick="connectWithAnswer()" style="border-color:#ff0;color:#ff0;">CONNECT</button>
             </div>
             <button class="menu-option" onclick="backToMultiplayerMenu()" style="margin-top:20px;font-size:9px;">← BACK</button>
         </div>
 
         <div id="joinRoomScreen" class="overlay" style="display:none;">
-            <h1>JOIN ROOM</h1>
-            <p style="color:#888;font-size:9px;margin-bottom:15px;">Paste the host's code below</p>
+            <h1>JOIN ROOM (GUEST)</h1>
+            <p style="color:#888;font-size:9px;margin-bottom:15px;">Step 1: Paste host's OFFER code</p>
             <div style="margin-bottom:15px;">
-                <p style="color:#0f0;font-size:10px;">Enter host's code:</p>
-                <textarea id="joinCodeInput" style="width:350px;height:60px;margin:10px 0;padding:8px;font-family:monospace;font-size:8px;background:#111;color:#0f0;border:2px solid #0f0;"></textarea><br>
+                <p style="color:#0f0;font-size:10px;">📥 PASTE OFFER CODE:</p>
+                <textarea id="joinCodeInput" style="width:350px;height:60px;margin:10px 0;padding:8px;font-family:monospace;font-size:8px;background:#111;color:#0f0;border:2px solid #0f0;" placeholder="Paste OFFER code here..."></textarea><br>
                 <button class="menu-option" onclick="joinWithCode()" style="border-color:#0f0;color:#0f0;">GENERATE ANSWER</button>
             </div>
             <div id="guestCodeBox" style="display:none;margin-top:15px;">
-                <p style="color:#f0f;font-size:10px;">Send this answer code to host:</p>
+                <p style="color:#f0f;font-size:10px;">📤 YOUR ANSWER CODE (send to host):</p>
                 <div style="background:#111;border:2px solid #f0f;padding:10px;margin:10px 0;max-width:400px;word-break:break-all;font-size:8px;max-height:80px;overflow-y:auto;" id="guestCode"></div>
-                <button class="menu-option" onclick="copyCode('guestCode')" style="font-size:9px;padding:8px 15px;">📋 COPY CODE</button>
+                <button class="menu-option" onclick="copyCode('guestCode')" style="font-size:9px;padding:8px 15px;">📋 COPY ANSWER</button>
             </div>
             <button class="menu-option" onclick="backToMultiplayerMenu()" style="margin-top:20px;font-size:9px;">← BACK</button>
         </div>
@@ -904,58 +904,88 @@
         }
 
         // ============ MENU MUSIC ============
+        // Epic heroic theme in D minor - a lone pilot facing the unknown
         let menuMusicPlaying = false;
         let menuMusicInterval = null;
         let menuBeat = 0;
 
-        // Catchy chiptune melody for menu (C major scale inspired retro tune)
+        // D minor scale: D E F G A Bb C D
+        // Frequencies: D4=294, E4=330, F4=349, G4=392, A4=440, Bb4=466, C5=523, D5=587
         const menuMelody = [
-            // Intro phrase
+            // Part 1: Rising hope (D minor arpeggio ascending)
+            { note: 294, dur: 0.2 },  // D4 - начало, тихая решимость
+            { note: 349, dur: 0.2 },  // F4
+            { note: 440, dur: 0.3 },  // A4 - подъём
+            { note: 587, dur: 0.5 },  // D5 - момент осознания
+            { note: 0, dur: 0.2 },    // пауза для дыхания
+
+            // Part 2: Tension builds (chromatic movement)
             { note: 523, dur: 0.15 }, // C5
-            { note: 587, dur: 0.15 }, // D5
-            { note: 659, dur: 0.3 },  // E5
-            { note: 523, dur: 0.15 }, // C5
-            { note: 0, dur: 0.15 },   // rest
-            { note: 784, dur: 0.3 },  // G5
-            { note: 659, dur: 0.15 }, // E5
-            { note: 523, dur: 0.3 },  // C5
-            // Second phrase
+            { note: 554, dur: 0.15 }, // C#5 - напряжение
+            { note: 587, dur: 0.4 },  // D5 - разрешение
+            { note: 440, dur: 0.2 },  // A4
+            { note: 466, dur: 0.3 },  // Bb4 - грусть
+            { note: 440, dur: 0.5 },  // A4 - принятие
+            { note: 0, dur: 0.2 },
+
+            // Part 3: Call to action (faster, more urgent)
+            { note: 587, dur: 0.12 }, // D5
+            { note: 659, dur: 0.12 }, // E5
+            { note: 698, dur: 0.12 }, // F5
+            { note: 784, dur: 0.35 }, // G5 - взлёт!
+            { note: 880, dur: 0.25 }, // A5 - высота
+            { note: 784, dur: 0.15 }, // G5
+            { note: 698, dur: 0.15 }, // F5
+            { note: 587, dur: 0.4 },  // D5 - возвращение
+            { note: 0, dur: 0.15 },
+
+            // Part 4: Heroic resolve (power chords feeling)
+            { note: 440, dur: 0.1 },  // A4
+            { note: 440, dur: 0.1 },  // A4 - удар
+            { note: 587, dur: 0.35 }, // D5
+            { note: 523, dur: 0.2 },  // C5
+            { note: 466, dur: 0.25 }, // Bb4 - драма
+            { note: 440, dur: 0.6 },  // A4 - долгая нота надежды
+            { note: 0, dur: 0.3 },
+
+            // Part 5: Soaring melody (emotional peak)
+            { note: 698, dur: 0.2 },  // F5
+            { note: 784, dur: 0.2 },  // G5
+            { note: 880, dur: 0.5 },  // A5 - кульминация
+            { note: 784, dur: 0.15 }, // G5
             { note: 698, dur: 0.15 }, // F5
             { note: 659, dur: 0.15 }, // E5
-            { note: 587, dur: 0.3 },  // D5
-            { note: 523, dur: 0.15 }, // C5
-            { note: 0, dur: 0.15 },   // rest
-            { note: 440, dur: 0.3 },  // A4
-            { note: 523, dur: 0.3 },  // C5
-            { note: 0, dur: 0.15 },   // rest
-            // Third phrase (higher energy)
-            { note: 784, dur: 0.1 },  // G5
-            { note: 784, dur: 0.1 },  // G5
-            { note: 880, dur: 0.2 },  // A5
-            { note: 784, dur: 0.15 }, // G5
-            { note: 659, dur: 0.15 }, // E5
-            { note: 523, dur: 0.3 },  // C5
-            { note: 587, dur: 0.15 }, // D5
-            { note: 659, dur: 0.4 },  // E5
-            // Ending phrase
-            { note: 523, dur: 0.15 }, // C5
-            { note: 659, dur: 0.15 }, // E5
-            { note: 784, dur: 0.15 }, // G5
-            { note: 1047, dur: 0.4 }, // C6
-            { note: 880, dur: 0.2 },  // A5
-            { note: 784, dur: 0.2 },  // G5
-            { note: 659, dur: 0.3 },  // E5
-            { note: 523, dur: 0.4 },  // C5
+            { note: 587, dur: 0.5 },  // D5
+
+            // Part 6: Resolution (coming home)
+            { note: 440, dur: 0.2 },  // A4
+            { note: 349, dur: 0.2 },  // F4
+            { note: 294, dur: 0.8 },  // D4 - финал, круг замкнулся
+            { note: 0, dur: 0.4 },    // тишина перед новым циклом
         ];
 
+        // Deep bass pattern - heartbeat of the hero
         const menuBassPattern = [
-            131, 0, 131, 0, 165, 0, 165, 0,  // C3, E3
-            147, 0, 147, 0, 175, 0, 196, 0,  // D3, F3, G3
-            131, 0, 165, 0, 196, 0, 262, 0,  // C3, E3, G3, C4
-            175, 0, 147, 0, 131, 0, 0, 0     // F3, D3, C3
+            147, 0, 147, 73,   // D3, D2 (octave jump)
+            147, 0, 175, 0,    // D3, F3
+            131, 0, 131, 65,   // C3, C2
+            147, 0, 110, 0,    // D3, A2
+            147, 0, 147, 73,
+            175, 0, 196, 0,    // F3, G3
+            147, 0, 147, 0,
+            110, 0, 131, 147,  // A2, C3, D3 (walking)
+        ];
+
+        // Arpeggio pattern for atmosphere
+        const menuArpeggio = [
+            294, 349, 440, 587, 440, 349,  // Dm arpeggio
+            262, 330, 392, 523, 392, 330,  // C arpeggio
+            233, 294, 349, 466, 349, 294,  // Bb arpeggio
+            220, 277, 330, 440, 330, 277,  // Am arpeggio
         ];
 
         let menuNoteIndex = 0;
+        let menuArpIndex = 0;
         let menuScheduledTime = 0;
 
         function playMenuMusic() {
@@ -966,6 +996,7 @@
             menuMusicPlaying = true;
             menuBeat = 0;
             menuNoteIndex = 0;
+            menuArpIndex = 0;
             menuScheduledTime = audioCtx.currentTime + 0.1;
 
             menuMusicInterval = setInterval(() => {
@@ -977,96 +1008,182 @@
                     const noteData = menuMelody[menuNoteIndex % menuMelody.length];
 
                     if (noteData.note > 0) {
-                        // Main melody (square wave)
+                        // Main melody - warm square wave with vibrato
                         const osc = audioCtx.createOscillator();
                         const gain = audioCtx.createGain();
+                        const vibrato = audioCtx.createOscillator();
+                        const vibratoGain = audioCtx.createGain();
+
+                        vibrato.connect(vibratoGain);
+                        vibratoGain.connect(osc.frequency);
                         osc.connect(gain);
                         gain.connect(audioCtx.destination);
+
                         osc.type = 'square';
                         osc.frequency.setValueAtTime(noteData.note, menuScheduledTime);
-                        gain.gain.setValueAtTime(0.08, menuScheduledTime);
-                        gain.gain.exponentialRampToValueAtTime(0.01, menuScheduledTime + noteData.dur * 0.9);
-                        osc.start(menuScheduledTime);
-                        osc.stop(menuScheduledTime + noteData.dur);
+                        vibrato.frequency.setValueAtTime(5, menuScheduledTime); // slow vibrato
+                        vibratoGain.gain.setValueAtTime(3, menuScheduledTime);
 
-                        // Harmony (triangle wave, octave down)
-                        const osc2 = audioCtx.createOscillator();
-                        const gain2 = audioCtx.createGain();
-                        osc2.connect(gain2);
-                        gain2.connect(audioCtx.destination);
-                        osc2.type = 'triangle';
-                        osc2.frequency.setValueAtTime(noteData.note / 2, menuScheduledTime);
-                        gain2.gain.setValueAtTime(0.05, menuScheduledTime);
-                        gain2.gain.exponentialRampToValueAtTime(0.01, menuScheduledTime + noteData.dur * 0.8);
-                        osc2.start(menuScheduledTime);
-                        osc2.stop(menuScheduledTime + noteData.dur);
+                        gain.gain.setValueAtTime(0.07, menuScheduledTime);
+                        gain.gain.setValueAtTime(0.09, menuScheduledTime + 0.02); // slight attack
+                        gain.gain.exponentialRampToValueAtTime(0.01, menuScheduledTime + noteData.dur * 0.95);
+
+                        osc.start(menuScheduledTime);
+                        vibrato.start(menuScheduledTime);
+                        osc.stop(menuScheduledTime + noteData.dur);
+                        vibrato.stop(menuScheduledTime + noteData.dur);
+
+                        // Ethereal pad (sine wave, fifth above) - creates space
+                        if (noteData.dur > 0.25) {
+                            const pad = audioCtx.createOscillator();
+                            const padGain = audioCtx.createGain();
+                            pad.connect(padGain);
+                            padGain.connect(audioCtx.destination);
+                            pad.type = 'sine';
+                            pad.frequency.setValueAtTime(noteData.note * 1.5, menuScheduledTime); // fifth
+                            padGain.gain.setValueAtTime(0.03, menuScheduledTime);
+                            padGain.gain.exponentialRampToValueAtTime(0.005, menuScheduledTime + noteData.dur);
+                            pad.start(menuScheduledTime);
+                            pad.stop(menuScheduledTime + noteData.dur);
+                        }
+
+                        // Sub bass following melody (octave below)
+                        const sub = audioCtx.createOscillator();
+                        const subGain = audioCtx.createGain();
+                        sub.connect(subGain);
+                        subGain.connect(audioCtx.destination);
+                        sub.type = 'sine';
+                        sub.frequency.setValueAtTime(noteData.note / 2, menuScheduledTime);
+                        subGain.gain.setValueAtTime(0.04, menuScheduledTime);
+                        subGain.gain.exponentialRampToValueAtTime(0.01, menuScheduledTime + noteData.dur * 0.7);
+                        sub.start(menuScheduledTime);
+                        sub.stop(menuScheduledTime + noteData.dur);
                     }
 
                     menuScheduledTime += noteData.dur;
                     menuNoteIndex++;
                 }
 
-                // Bass drum on beats
-                if (menuBeat % 4 === 0) {
-                    const bass = audioCtx.createOscillator();
-                    const bassGain = audioCtx.createGain();
-                    bass.connect(bassGain);
-                    bassGain.connect(audioCtx.destination);
-                    bass.type = 'sine';
-                    bass.frequency.setValueAtTime(80, now);
-                    bass.frequency.exponentialRampToValueAtTime(40, now + 0.1);
-                    bassGain.gain.setValueAtTime(0.15, now);
-                    bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-                    bass.start(now);
-                    bass.stop(now + 0.15);
+                // Arpeggio layer - constant motion like rotor blades
+                if (menuBeat % 2 === 0) {
+                    const arpNote = menuArpeggio[menuArpIndex % menuArpeggio.length];
+                    const arp = audioCtx.createOscillator();
+                    const arpGain = audioCtx.createGain();
+                    arp.connect(arpGain);
+                    arpGain.connect(audioCtx.destination);
+                    arp.type = 'triangle';
+                    arp.frequency.setValueAtTime(arpNote, now);
+                    arpGain.gain.setValueAtTime(0.025, now);
+                    arpGain.gain.exponentialRampToValueAtTime(0.005, now + 0.12);
+                    arp.start(now);
+                    arp.stop(now + 0.12);
+                    menuArpIndex++;
                 }
 
-                // Bass line
+                // Deep kick drum - heartbeat
+                if (menuBeat % 8 === 0) {
+                    const kick = audioCtx.createOscillator();
+                    const kickGain = audioCtx.createGain();
+                    kick.connect(kickGain);
+                    kickGain.connect(audioCtx.destination);
+                    kick.type = 'sine';
+                    kick.frequency.setValueAtTime(100, now);
+                    kick.frequency.exponentialRampToValueAtTime(30, now + 0.15);
+                    kickGain.gain.setValueAtTime(0.2, now);
+                    kickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    kick.start(now);
+                    kick.stop(now + 0.2);
+                }
+
+                // Secondary kick for drive
+                if (menuBeat % 8 === 4) {
+                    const kick2 = audioCtx.createOscillator();
+                    const kick2Gain = audioCtx.createGain();
+                    kick2.connect(kick2Gain);
+                    kick2Gain.connect(audioCtx.destination);
+                    kick2.type = 'sine';
+                    kick2.frequency.setValueAtTime(80, now);
+                    kick2.frequency.exponentialRampToValueAtTime(35, now + 0.1);
+                    kick2Gain.gain.setValueAtTime(0.12, now);
+                    kick2Gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    kick2.start(now);
+                    kick2.stop(now + 0.12);
+                }
+
+                // Bass line - the foundation
                 const bassNote = menuBassPattern[menuBeat % menuBassPattern.length];
                 if (bassNote > 0) {
                     const bassLine = audioCtx.createOscillator();
                     const bassLineGain = audioCtx.createGain();
                     bassLine.connect(bassLineGain);
                     bassLineGain.connect(audioCtx.destination);
-                    bassLine.type = 'triangle';
+                    bassLine.type = 'sawtooth';
                     bassLine.frequency.setValueAtTime(bassNote, now);
-                    bassLineGain.gain.setValueAtTime(0.1, now);
-                    bassLineGain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    bassLineGain.gain.setValueAtTime(0.06, now);
+                    bassLineGain.gain.exponentialRampToValueAtTime(0.01, now + 0.14);
                     bassLine.start(now);
-                    bassLine.stop(now + 0.12);
+                    bassLine.stop(now + 0.14);
                 }
 
-                // Hi-hat pattern
-                if (menuBeat % 2 === 1) {
+                // Hi-hat - lighter, more musical pattern
+                if (menuBeat % 4 === 1 || menuBeat % 4 === 3) {
                     const hat = audioCtx.createOscillator();
                     const hatGain = audioCtx.createGain();
                     hat.connect(hatGain);
                     hatGain.connect(audioCtx.destination);
                     hat.type = 'square';
-                    hat.frequency.setValueAtTime(1200 + Math.random() * 400, now);
-                    hatGain.gain.setValueAtTime(0.02, now);
-                    hatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                    hat.frequency.setValueAtTime(800 + Math.random() * 600, now);
+                    hatGain.gain.setValueAtTime(0.015, now);
+                    hatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
                     hat.start(now);
-                    hat.stop(now + 0.03);
+                    hat.stop(now + 0.04);
                 }
 
-                // Snare on 2 and 4
-                if (menuBeat % 8 === 4) {
-                    const noise = audioCtx.createOscillator();
-                    const noiseGain = audioCtx.createGain();
-                    noise.connect(noiseGain);
-                    noiseGain.connect(audioCtx.destination);
-                    noise.type = 'sawtooth';
-                    noise.frequency.setValueAtTime(200, now);
-                    noise.frequency.exponentialRampToValueAtTime(80, now + 0.1);
-                    noiseGain.gain.setValueAtTime(0.08, now);
-                    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                    noise.start(now);
-                    noise.stop(now + 0.1);
+                // Snare with more body
+                if (menuBeat % 16 === 8 || menuBeat % 16 === 12) {
+                    // Snare body
+                    const snareBody = audioCtx.createOscillator();
+                    const snareGain = audioCtx.createGain();
+                    snareBody.connect(snareGain);
+                    snareGain.connect(audioCtx.destination);
+                    snareBody.type = 'triangle';
+                    snareBody.frequency.setValueAtTime(180, now);
+                    snareBody.frequency.exponentialRampToValueAtTime(100, now + 0.08);
+                    snareGain.gain.setValueAtTime(0.1, now);
+                    snareGain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    snareBody.start(now);
+                    snareBody.stop(now + 0.12);
+
+                    // Snare noise
+                    const snareNoise = audioCtx.createOscillator();
+                    const snareNoiseGain = audioCtx.createGain();
+                    snareNoise.connect(snareNoiseGain);
+                    snareNoiseGain.connect(audioCtx.destination);
+                    snareNoise.type = 'sawtooth';
+                    snareNoise.frequency.setValueAtTime(300, now);
+                    snareNoiseGain.gain.setValueAtTime(0.04, now);
+                    snareNoiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    snareNoise.start(now);
+                    snareNoise.stop(now + 0.08);
+                }
+
+                // Occasional crash for drama
+                if (menuBeat % 64 === 0 && menuBeat > 0) {
+                    const crash = audioCtx.createOscillator();
+                    const crashGain = audioCtx.createGain();
+                    crash.connect(crashGain);
+                    crashGain.connect(audioCtx.destination);
+                    crash.type = 'sawtooth';
+                    crash.frequency.setValueAtTime(400, now);
+                    crash.frequency.exponentialRampToValueAtTime(100, now + 0.5);
+                    crashGain.gain.setValueAtTime(0.05, now);
+                    crashGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                    crash.start(now);
+                    crash.stop(now + 0.6);
                 }
 
                 menuBeat++;
-            }, 120); // ~125 BPM
+            }, 110); // ~136 BPM - slightly faster, more energetic
         }
 
         function stopMenuMusic() {
@@ -1120,22 +1237,38 @@
             invincible: 0
         };
 
+        // WebRTC config with STUN servers for NAT traversal
         const rtcConfig = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
             ]
         };
 
+        function sendMP(data) {
+            if (dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(JSON.stringify(data));
+            }
+        }
+
         function initWebRTC(asHost) {
             isHost = asHost;
+
+            // Close existing connection if any
+            if (peerConnection) {
+                peerConnection.close();
+            }
+
             peerConnection = new RTCPeerConnection(rtcConfig);
 
             peerConnection.onicecandidate = (e) => {
+                console.log('ICE candidate:', e.candidate ? 'found' : 'gathering complete');
                 if (e.candidate === null) {
                     // ICE gathering complete - show the full offer/answer
                     const desc = peerConnection.localDescription;
                     const code = btoa(JSON.stringify(desc));
+                    console.log('Generated code type:', desc.type, 'isHost:', isHost, 'state:', peerConnection.signalingState);
                     if (isHost) {
                         document.getElementById('hostCode').textContent = code;
                         document.getElementById('hostCodeBox').style.display = 'block';
@@ -1144,6 +1277,14 @@
                         document.getElementById('guestCodeBox').style.display = 'block';
                     }
                 }
+            };
+
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log('ICE connection state:', peerConnection.iceConnectionState);
+            };
+
+            peerConnection.onsignalingstatechange = () => {
+                console.log('Signaling state:', peerConnection.signalingState);
             };
 
             peerConnection.ondatachannel = (e) => {
@@ -1181,17 +1322,23 @@
             };
         }
 
-        function sendMP(data) {
-            if (dataChannel && dataChannel.readyState === 'open') {
-                dataChannel.send(JSON.stringify(data));
-            }
-        }
-
         async function createRoom() {
             initWebRTC(true);
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
-            // Code will appear when ICE gathering completes
+            console.log('Offer created, state:', peerConnection.signalingState);
+
+            // Fallback: show code after 2 seconds even if ICE not complete
+            setTimeout(() => {
+                if (peerConnection && peerConnection.localDescription &&
+                    document.getElementById('hostCodeBox').style.display === 'none') {
+                    const desc = peerConnection.localDescription;
+                    const code = btoa(JSON.stringify(desc));
+                    document.getElementById('hostCode').textContent = code;
+                    document.getElementById('hostCodeBox').style.display = 'block';
+                    console.log('Showing offer (timeout fallback), state:', peerConnection.signalingState);
+                }
+            }, 2000);
         }
 
         async function joinWithCode() {
@@ -1206,7 +1353,19 @@
                 await peerConnection.setRemoteDescription(offer);
                 const answer = await peerConnection.createAnswer();
                 await peerConnection.setLocalDescription(answer);
-                // Answer code will appear when ICE gathering completes
+                console.log('Answer created, state:', peerConnection.signalingState);
+
+                // Fallback: show code after 2 seconds even if ICE not complete
+                setTimeout(() => {
+                    if (peerConnection && peerConnection.localDescription &&
+                        document.getElementById('guestCodeBox').style.display === 'none') {
+                        const desc = peerConnection.localDescription;
+                        const code = btoa(JSON.stringify(desc));
+                        document.getElementById('guestCode').textContent = code;
+                        document.getElementById('guestCodeBox').style.display = 'block';
+                        console.log('Showing answer (timeout fallback), state:', peerConnection.signalingState);
+                    }
+                }, 2000);
             } catch (e) {
                 console.error('Join code error:', e);
                 alert('Invalid code! Make sure you copied the entire code.');
@@ -1220,8 +1379,24 @@
             if (!code) return;
 
             try {
+                // Check if peerConnection is in correct state
+                if (!peerConnection) {
+                    alert('Connection lost! Please start over.');
+                    backToMultiplayerMenu();
+                    return;
+                }
+
+                console.log('Connection state:', peerConnection.signalingState);
+
+                if (peerConnection.signalingState !== 'have-local-offer') {
+                    alert('Connection expired. Please create a new room.');
+                    backToMultiplayerMenu();
+                    return;
+                }
+
                 const answer = JSON.parse(atob(code));
                 await peerConnection.setRemoteDescription(answer);
+                console.log('Answer set successfully!');
                 // Connection should establish automatically
             } catch (e) {
                 console.error('Answer code error:', e);
@@ -2329,7 +2504,7 @@
             document.getElementById('startScreen').style.display = 'flex';
             if (musicPlaying) toggleMusic();
             // Resume menu music if it was on
-            if (localStorage.getItem('menuMusicOn') === 'true') {
+            if (localStorage.getItem('menuMusicOn') !== 'false') {
                 playMenuMusic();
             }
         }
@@ -2338,7 +2513,7 @@
             document.getElementById('gameOverScreen').style.display = 'none';
             document.getElementById('startScreen').style.display = 'flex';
             // Resume menu music if it was on
-            if (localStorage.getItem('menuMusicOn') === 'true') {
+            if (localStorage.getItem('menuMusicOn') !== 'false') {
                 playMenuMusic();
             }
         }
@@ -7147,6 +7322,25 @@
 
         // Show menu on load
         document.getElementById('startScreen').style.display = 'flex';
+
+        // Music ON by default - start on first user interaction (browser requirement)
+        let musicAutoStarted = false;
+        function tryAutoStartMusic() {
+            if (!musicAutoStarted && localStorage.getItem('menuMusicOn') !== 'false') {
+                musicAutoStarted = true;
+                playMenuMusic();
+                updateMenuMusicButton();
+            }
+            document.removeEventListener('click', tryAutoStartMusic);
+            document.removeEventListener('keydown', tryAutoStartMusic);
+        }
+        document.addEventListener('click', tryAutoStartMusic);
+        document.addEventListener('keydown', tryAutoStartMusic);
+
+        // Set button to show correct state
+        if (localStorage.getItem('menuMusicOn') !== 'false') {
+            document.getElementById('menuMusicBtn').textContent = '🎵 ON';
+        }
     </script>
 </body>
 </html>
