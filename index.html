@@ -2214,7 +2214,7 @@
 
         // Achievements system
         let achievements = JSON.parse(localStorage.getItem('chopperAchievements') || '{}');
-        let gameStats = { droneKills: 0, ghostDodges: 0, collectedPowerups: new Set(), bossHitsTaken: 0, levelStartTime: 0 };
+        let gameStats = { droneKills: 0, ghostDodges: 0, collectedPowerups: new Set(), bossHitsTaken: 0, levelStartTime: 0, lastStandUsed: false, regenAccumulator: 0 };
 
         const ACHIEVEMENTS = {
             first_blood: { name: 'First Blood', desc: 'Kill your first enemy', icon: '🩸' },
