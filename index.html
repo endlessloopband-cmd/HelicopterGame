@@ -55,6 +55,80 @@
             50% { color: #f00; text-shadow: 0 0 30px #f00, 0 0 50px #f00; transform: scale(1.3); }
         }
         .level-display { color: #ff0; text-shadow: 0 0 10px #ff0; }
+        .coins-display { color: #fd0; text-shadow: 0 0 10px #fd0; }
+        #ultBar {
+            position: absolute;
+            bottom: 15px; left: 50%;
+            transform: translateX(-50%);
+            width: 200px; height: 20px;
+            background: #111;
+            border: 2px solid #f0f;
+            box-shadow: 0 0 10px #f0f;
+            z-index: 50;
+        }
+        #ultFill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #f0f, #0ff);
+            box-shadow: 0 0 15px #f0f;
+            transition: width 0.2s;
+        }
+        #ultText {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            top: 2px; left: 0;
+            font-size: 10px;
+            color: #fff;
+            text-shadow: 0 0 5px #000;
+        }
+        #rageIndicator {
+            position: absolute;
+            bottom: 45px; left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: #f00;
+            text-shadow: 0 0 20px #f00, 0 0 40px #f00;
+            z-index: 50;
+            display: none;
+            animation: ragePulse 0.3s infinite;
+        }
+        @keyframes ragePulse {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.1); }
+        }
+        .shop-item {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #222;
+            border: 2px solid #0ff;
+            color: #fff;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .shop-item:hover { background: #333; box-shadow: 0 0 15px #0ff; }
+        .shop-item.disabled { opacity: 0.4; cursor: not-allowed; border-color: #444; }
+        .heli-option {
+            display: inline-block;
+            width: 120px;
+            padding: 10px;
+            margin: 5px;
+            background: #222;
+            border: 2px solid #0ff;
+            color: #fff;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            cursor: pointer;
+            vertical-align: top;
+        }
+        .heli-option:hover { box-shadow: 0 0 15px #0ff; }
+        .heli-option.selected { border-color: #0f0; box-shadow: 0 0 20px #0f0; }
+        .heli-option .heli-name { color: #0ff; font-size: 10px; }
+        .heli-option .heli-stat { color: #888; margin: 3px 0; }
         #comboIndicator {
             position: absolute;
             top: 50px; right: 15px;
@@ -285,10 +359,13 @@
             <div><span class="score-label">SCORE</span><br><span id="score">00000000</span></div>
             <div><span class="level-display">STAGE</span><br><span id="level">01</span></div>
             <div><span class="lives-display">LIVES</span><br><span id="lives"></span></div>
+            <div><span class="coins-display">COINS</span><br><span id="coins">🪙 0</span></div>
         </div>
+        <div id="ultBar"><div id="ultFill"></div><span id="ultText">ULT</span></div>
         <div id="comboIndicator">x1</div>
         <div id="powerupIndicator"></div>
         <div id="weaponIndicator">WEAPON: NORMAL</div>
+        <div id="rageIndicator">🔥 RAGE MODE 🔥</div>
         <div id="bossHealth"><div id="bossHealthBar"></div></div>
         <div id="bossName">BOSS</div>
 
@@ -305,10 +382,11 @@
                 <button class="menu-option mode-btn" onclick="startGame('bossrush')">BOSS RUSH</button>
             </div>
             <div class="extra-section">
-                <button class="menu-option extra-btn" onclick="showSkinScreen()">HELICOPTERS</button>
-                <button class="menu-option extra-btn" onclick="showAchievements()">ACHIEVEMENTS</button>
+                <button class="menu-option extra-btn" onclick="showHeliSelect()">🚁 HELICOPTERS</button>
+                <button class="menu-option extra-btn" onclick="showSkinScreen()">🎨 SKINS</button>
+                <button class="menu-option extra-btn" onclick="showAchievements()">🏆 ACHIEVEMENTS</button>
             </div>
-            <p class="controls-info">WASD/ARROWS: Move | SPACE: Fire | B: Bomb | L: Laser | R: Rockets<br>ESC: Pause | M: Music | 1-4: Weapons</p>
+            <p class="controls-info">WASD: Move | SPACE: Fire | B: Bomb | L: Laser | R: Rockets | U: Ultimate<br>ESC: Pause | M: Music | 1-4: Weapons</p>
         </div>
 
         <div id="pauseScreen" class="overlay" style="display:none;">
@@ -321,6 +399,19 @@
             <h1 style="font-size:24px;">LEVEL UP!</h1>
             <p style="color:#0ff;margin:20px;">Choose your upgrade:</p>
             <div id="upgradeOptions"></div>
+        </div>
+
+        <div id="shopScreen" class="overlay" style="display:none;">
+            <h1>🏪 SHOP</h1>
+            <p id="shopCoins" style="color:#fd0;font-size:18px;">🪙 0</p>
+            <div id="shopItems"></div>
+            <button class="menu-option" onclick="closeShop()">CONTINUE →</button>
+        </div>
+
+        <div id="heliSelectScreen" class="overlay" style="display:none;">
+            <h1>🚁 SELECT HELICOPTER</h1>
+            <div id="heliGrid"></div>
+            <button class="menu-option" onclick="closeHeliSelect()">BACK</button>
         </div>
 
         <div id="gameOverScreen" class="overlay" style="display:none;">
@@ -365,7 +456,7 @@
         let voiceCooldown = 0;
 
         function initAudio() {
-            if (!audioCtx) audioCtx = new AudioCtx();
+            if (!audioCtx && AudioCtx) audioCtx = new AudioCtx();
         }
 
         // Voice samples (8-bit style)
@@ -384,6 +475,7 @@
             const freqs = frequencies[text] || [440];
             freqs.forEach((f, i) => {
                 setTimeout(() => {
+                    if (!audioCtx) return;
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
                     osc.connect(gain);
@@ -600,6 +692,7 @@
             if (intensity > 0.7 && musicBeat % 4 === 0) {
                 [0, 100, 200].forEach((delay, i) => {
                     setTimeout(() => {
+                        if (!audioCtx) return;
                         const arp = audioCtx.createOscillator();
                         const arpGain = audioCtx.createGain();
                         arp.connect(arpGain);
@@ -665,6 +758,45 @@
         // Slow motion
         let slowMotion = 0;
         let slowMotionFactor = 1;
+
+        // ============ MEGA UPGRADE SYSTEMS ============
+        // Coins & Economy
+        let coins = 0;
+        let totalKills = 0;
+        let maxLives = 3;
+        let permanentFireRate = 0;
+        let permanentDamage = 0;
+        let luckBonus = 0;
+
+        // Ultimate system
+        let ultCharge = 0;
+        let ultActive = null;
+        let ultTimer = 0;
+        let flashColor = null;
+        let flashAlpha = 0;
+        let distortion = 0;
+
+        // Helicopters
+        const HELICOPTERS = {
+            classic: { name: 'CLASSIC', maxLives: 3, speed: 5, damage: 1, ultimate: 'nuke', ultDuration: 1, color: '#0f0', desc: 'Balanced fighter' },
+            tank: { name: 'TANK', maxLives: 5, speed: 3, damage: 0.8, ultimate: 'godMode', ultDuration: 600, color: '#48f', desc: 'Slow but tough' },
+            speeder: { name: 'SPEEDER', maxLives: 2, speed: 8, damage: 1, ultimate: 'bulletTime', ultDuration: 300, color: '#f0f', desc: 'Fast and agile' },
+            glassCannon: { name: 'GLASS CANNON', maxLives: 1, speed: 5, damage: 2.5, ultimate: 'nuke', ultDuration: 1, color: '#f00', desc: 'High risk high reward' },
+            vampire: { name: 'VAMPIRE', maxLives: 2, speed: 5, damage: 1, ultimate: 'godMode', ultDuration: 300, color: '#808', special: 'lifesteal', desc: 'Heals on kills' }
+        };
+        let currentHelicopter = 'classic';
+        let unlockedHelicopters = ['classic', 'tank', 'speeder', 'glassCannon', 'vampire'];
+
+        // Shop items
+        const SHOP_ITEMS = [
+            { id: 'life', name: '+1 LIFE', cost: 100, icon: '❤️' },
+            { id: 'bombs', name: '+3 BOMBS', cost: 50, icon: '💣' },
+            { id: 'maxhp', name: 'MAX HP+', cost: 200, icon: '💖' },
+            { id: 'firerate', name: 'FIRE RATE', cost: 150, icon: '⚡' },
+            { id: 'damage', name: 'DAMAGE+', cost: 150, icon: '💥' },
+            { id: 'magnet', name: 'MAGNET', cost: 100, icon: '🧲' },
+            { id: 'lucky', name: 'LUCKY', cost: 200, icon: '🍀' }
+        ];
 
         // Weather
         let weather = { rain: [], lightning: 0, thunderTimer: 0 };
@@ -931,6 +1063,7 @@
             if (e.code === 'KeyB' && gameRunning && !paused) useBomb();
             if (e.code === 'KeyL' && gameRunning && !paused) activateLaser();
             if (e.code === 'KeyR' && gameRunning && !paused) fireRocket();
+            if (e.code === 'KeyU' && gameRunning && !paused) activateUltimate();
             if (e.code === 'Digit1') currentWeapon = 'normal';
             if (e.code === 'Digit2') currentWeapon = 'spread';
             if (e.code === 'Digit3') currentWeapon = 'laser';
@@ -990,10 +1123,26 @@
             difficulty = diff;
             gameMode = diff;
             const cfg = difficulties[diff];
-            lives = cfg.lives;
-            lastDisplayedLives = cfg.lives;
-            player.speed = cfg.playerSpeed;
+            const heli = HELICOPTERS[currentHelicopter];
+
+            // Apply helicopter stats
+            maxLives = heli.maxLives;
+            lives = Math.min(cfg.lives, maxLives);
+            lastDisplayedLives = lives;
+            player.speed = cfg.playerSpeed * (heli.speed / 5); // Relative to base speed
             enemySpawnRate = cfg.enemySpawnRate;
+
+            // Reset mega upgrade variables
+            coins = 0;
+            totalKills = 0;
+            ultCharge = 0;
+            ultActive = null;
+            ultTimer = 0;
+            flashAlpha = 0;
+            distortion = 0;
+            permanentFireRate = 0;
+            permanentDamage = 0;
+            luckBonus = 0;
 
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOverScreen').style.display = 'none';
@@ -1127,19 +1276,19 @@
         // Achievement system functions
         function playAchievementSound() {
             try {
-                if (!audioContext || !masterGain) return;
-                const now = audioContext.currentTime;
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
 
                 // Epic fanfare sound
                 const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
                 notes.forEach((freq, i) => {
-                    const osc = audioContext.createOscillator();
-                    const gain = audioContext.createGain();
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
                     osc.connect(gain);
-                    gain.connect(masterGain);
+                    gain.connect(audioCtx.destination);
                     osc.type = 'square';
                     osc.frequency.setValueAtTime(freq, now + i * 0.1);
-                    gain.gain.setValueAtTime(0.25, now + i * 0.1);
+                    gain.gain.setValueAtTime(0.15, now + i * 0.1);
                     gain.gain.setTargetAtTime(0.01, now + i * 0.1 + 0.15, 0.05);
                     osc.start(now + i * 0.1);
                     osc.stop(now + i * 0.1 + 0.3);
@@ -1147,13 +1296,13 @@
 
                 // Shimmer effect
                 for (let i = 0; i < 3; i++) {
-                    const osc = audioContext.createOscillator();
-                    const gain = audioContext.createGain();
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
                     osc.connect(gain);
-                    gain.connect(masterGain);
+                    gain.connect(audioCtx.destination);
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(1500 + i * 400, now + 0.3);
-                    gain.gain.setValueAtTime(0.1, now + 0.3);
+                    gain.gain.setValueAtTime(0.08, now + 0.3);
                     gain.gain.setTargetAtTime(0.01, now + 0.45, 0.05);
                     osc.start(now + 0.3);
                     osc.stop(now + 0.6);
@@ -1361,6 +1510,29 @@
             }
             lastDisplayedLives = lives;
 
+            // Coins display
+            document.getElementById('coins').textContent = '🪙 ' + coins;
+
+            // Ultimate bar
+            const ultFill = document.getElementById('ultFill');
+            const ultText = document.getElementById('ultText');
+            ultFill.style.width = ultCharge + '%';
+            if (ultCharge >= 100) {
+                ultText.textContent = '⚡ PRESS U ⚡';
+                ultFill.style.background = 'linear-gradient(90deg, #ff0, #f0f, #0ff)';
+            } else {
+                ultText.textContent = 'ULT ' + Math.floor(ultCharge) + '%';
+                ultFill.style.background = 'linear-gradient(90deg, #f0f, #0ff)';
+            }
+
+            // Rage mode indicator
+            const rageEl = document.getElementById('rageIndicator');
+            if (lives === 1 && !boss) {
+                rageEl.style.display = 'block';
+            } else {
+                rageEl.style.display = 'none';
+            }
+
             const comboEl = document.getElementById('comboIndicator');
             if (comboMultiplier > 1) {
                 comboEl.textContent = 'x' + comboMultiplier + (combo >= 20 ? ' GODLIKE!' : combo >= 10 ? ' UNSTOPPABLE!' : combo >= 5 ? ' MEGA!' : '');
@@ -1428,6 +1600,156 @@
                 });
                 updateUI();
             }
+        }
+
+        // ============ MEGA UPGRADE FUNCTIONS ============
+
+        // ULTIMATE ABILITY
+        function activateUltimate() {
+            if (ultCharge < 100) return;
+            ultCharge = 0;
+
+            const heli = HELICOPTERS[currentHelicopter];
+            ultActive = heli.ultimate;
+            ultTimer = heli.ultDuration;
+
+            playSound('megaExplosion');
+            screenShake = 25;
+
+            if (ultActive === 'nuke') {
+                // NUKE - Kill all enemies instantly
+                enemies.forEach(e => {
+                    createExplosion(e.x + e.width/2, e.y + e.height/2, true);
+                    score += (e.points || 100) * 2;
+                    coins += 5;
+                });
+                enemies = [];
+                // White flash
+                flashColor = '#fff';
+                flashAlpha = 1;
+                distortion = 0.05;
+                floatingTexts.push({
+                    x: canvas.width/2, y: canvas.height/2,
+                    text: '☢️ NUKE ☢️', color: '#ff0', life: 90, size: 32
+                });
+            } else if (ultActive === 'bulletTime') {
+                // BULLET TIME - Slow motion
+                floatingTexts.push({
+                    x: canvas.width/2, y: canvas.height/2,
+                    text: '⏱️ BULLET TIME ⏱️', color: '#0ff', life: 90, size: 28
+                });
+                flashColor = '#08f';
+                flashAlpha = 0.3;
+            } else if (ultActive === 'godMode') {
+                // GOD MODE - Invincibility
+                floatingTexts.push({
+                    x: canvas.width/2, y: canvas.height/2,
+                    text: '👑 GOD MODE 👑', color: '#fd0', life: 90, size: 28
+                });
+                flashColor = '#fd0';
+                flashAlpha = 0.5;
+            }
+
+            updateUI();
+        }
+
+        // SHOP SYSTEM
+        function showShop() {
+            paused = true;
+            const shopDiv = document.getElementById('shopScreen');
+            const itemsDiv = document.getElementById('shopItems');
+            document.getElementById('shopCoins').textContent = '🪙 ' + coins;
+
+            itemsDiv.innerHTML = '';
+            SHOP_ITEMS.forEach(item => {
+                const canBuy = coins >= item.cost;
+                const btn = document.createElement('button');
+                btn.className = 'shop-item ' + (canBuy ? '' : 'disabled');
+                btn.innerHTML = `${item.icon} ${item.name} - ${item.cost}🪙`;
+                btn.onclick = () => buyItem(item.id);
+                itemsDiv.appendChild(btn);
+            });
+
+            document.getElementById('upgradeScreen').style.display = 'none';
+            shopDiv.style.display = 'flex';
+        }
+
+        function buyItem(id) {
+            const item = SHOP_ITEMS.find(i => i.id === id);
+            if (!item || coins < item.cost) return;
+
+            coins -= item.cost;
+            playSound('powerup');
+
+            switch(id) {
+                case 'life': lives = Math.min(lives + 1, maxLives); break;
+                case 'bombs': bombs += 3; break;
+                case 'maxhp': maxLives++; lives++; break;
+                case 'firerate': permanentFireRate += 0.1; break;
+                case 'damage': permanentDamage += 0.2; break;
+                case 'magnet': perks.magnet++; break;
+                case 'lucky': luckBonus += 0.1; break;
+            }
+
+            floatingTexts.push({
+                x: canvas.width/2, y: canvas.height/2 - 50,
+                text: item.icon + ' PURCHASED!', color: '#0f0', life: 60, size: 18
+            });
+
+            updateUI();
+            showShop(); // Refresh
+        }
+
+        function closeShop() {
+            document.getElementById('shopScreen').style.display = 'none';
+            paused = false;
+        }
+
+        // HELICOPTER SELECTION
+        function showHeliSelect() {
+            const screen = document.getElementById('heliSelectScreen');
+            const grid = document.getElementById('heliGrid');
+            grid.innerHTML = '';
+
+            Object.entries(HELICOPTERS).forEach(([id, heli]) => {
+                const isUnlocked = unlockedHelicopters.includes(id);
+                const isSelected = currentHelicopter === id;
+
+                const div = document.createElement('div');
+                div.className = 'heli-option ' + (isSelected ? 'selected' : '');
+                div.innerHTML = `
+                    <div class="heli-name" style="color:${heli.color}">${heli.name}</div>
+                    <div class="heli-stat">❤️ ${heli.maxLives} HP</div>
+                    <div class="heli-stat">⚡ ${heli.speed} SPD</div>
+                    <div class="heli-stat">💥 ${heli.damage}x DMG</div>
+                    <div class="heli-stat" style="color:#f0f">ULT: ${heli.ultimate.toUpperCase()}</div>
+                    <div style="color:#666;font-size:6px;margin-top:5px">${heli.desc}</div>
+                `;
+                if (isUnlocked) {
+                    div.onclick = () => selectHelicopter(id);
+                }
+                grid.appendChild(div);
+            });
+
+            document.getElementById('startScreen').style.display = 'none';
+            screen.style.display = 'flex';
+        }
+
+        function selectHelicopter(id) {
+            if (!unlockedHelicopters.includes(id)) return;
+            currentHelicopter = id;
+            localStorage.setItem('chopperHelicopter', currentHelicopter);
+            showHeliSelect(); // Refresh
+        }
+
+        function closeHeliSelect() {
+            document.getElementById('heliSelectScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'flex';
+        }
+
+        // Check if Rage Mode is active
+        function isRageMode() {
+            return lives === 1 && !boss;
         }
 
         function useBomb() {
@@ -1634,7 +1956,14 @@
                 blinker: { width: 28, height: 28, speed: 2, health: 2, points: 300, shootCooldown: 800, glowColor: '#0ff' },
                 shielder: { width: 65, height: 40, speed: 1.5, health: 3, points: 400, shootCooldown: 1200, glowColor: '#00f', shieldHP: 5 },
                 miner: { width: 50, height: 30, speed: 2, health: 2, points: 250, shootCooldown: 9999, glowColor: '#0f0' },
-                scout: { width: 25, height: 18, speed: 7, health: 1, points: 350, shootCooldown: 1500, glowColor: '#ff0' }
+                scout: { width: 25, height: 18, speed: 7, health: 1, points: 350, shootCooldown: 1500, glowColor: '#ff0' },
+                // MEGA UPGRADE ENEMIES
+                teleporter: { width: 32, height: 32, speed: 1, health: 2, points: 400, shootCooldown: 1000, glowColor: '#f0f' },
+                splitter: { width: 50, height: 35, speed: 2.5, health: 4, points: 350, shootCooldown: 1500, glowColor: '#0f8' },
+                splitter_mini: { width: 25, height: 18, speed: 4, health: 1, points: 75, shootCooldown: 2000, glowColor: '#0f8' },
+                healer: { width: 40, height: 35, speed: 1.5, health: 3, points: 500, shootCooldown: 9999, glowColor: '#0f0' },
+                reflector: { width: 45, height: 40, speed: 2, health: 5, points: 450, shootCooldown: 1200, glowColor: '#ccc' },
+                suicide_bomber: { width: 30, height: 30, speed: 5, health: 1, points: 200, shootCooldown: 9999, glowColor: '#f80' }
             };
 
             const p = props[type] || props.fighter;
@@ -1690,7 +2019,6 @@
 
             // Regular enemy types + new enemies based on level
             const baseTypes = ['fighter', 'bomber', 'jet', 'helicopter', 'turret', 'drone'];
-            const newTypes = ['kamikaze', 'blinker', 'shielder', 'miner', 'scout'];
 
             let available = baseTypes.slice(0, Math.min(baseTypes.length, 2 + Math.floor(level / 2)));
 
@@ -1700,6 +2028,13 @@
             if (level >= 6) available.push('shielder');
             if (level >= 8) available.push('miner');
             if (level >= 10) available.push('scout');
+
+            // MEGA UPGRADE: New enemy types
+            if (level >= 7) available.push('teleporter');
+            if (level >= 9) available.push('splitter');
+            if (level >= 11) available.push('healer');
+            if (level >= 13) available.push('reflector');
+            if (level >= 15) available.push('suicide_bomber');
 
             const type = available[Math.floor(Math.random() * available.length)];
             const enemy = createEnemy(type);
@@ -2675,15 +3010,18 @@
 
             // Update phase indicator in health bar
             const phaseText = `PHASE ${b.currentPhase}`;
-            document.getElementById('bossName').textContent = `★ ${b.name} - ${phaseText} ★`;
+            const bossNameEl = document.getElementById('bossName');
+            if (bossNameEl) bossNameEl.textContent = `★ ${b.name} - ${phaseText} ★`;
 
             // Health bar update with phase colors
             const healthPercent = b.health / b.maxHealth * 100;
             const hpBar = document.getElementById('bossHealthBar');
-            hpBar.style.width = healthPercent + '%';
-            hpBar.style.background = b.currentPhase === 3 ? 'linear-gradient(90deg, #f00, #ff0, #f00)' :
-                                     b.currentPhase === 2 ? 'linear-gradient(90deg, #f80, #ff0, #f80)' :
-                                     'linear-gradient(90deg, #0f0, #ff0, #0f0)';
+            if (hpBar) {
+                hpBar.style.width = healthPercent + '%';
+                hpBar.style.background = b.currentPhase === 3 ? 'linear-gradient(90deg, #f00, #ff0, #f00)' :
+                                         b.currentPhase === 2 ? 'linear-gradient(90deg, #f80, #ff0, #f80)' :
+                                         'linear-gradient(90deg, #0f0, #ff0, #0f0)';
+            }
         }
 
         function createExplosion(x, y, large = false) {
@@ -2763,6 +3101,60 @@
             } else {
                 slowMotionFactor = 1;
             }
+
+            // ============ MEGA UPGRADE: Ultimate effects ============
+            if (ultActive && ultTimer > 0) {
+                ultTimer--;
+
+                if (ultActive === 'bulletTime') {
+                    slowMotionFactor = 0.2; // Super slow
+                    // Auto-aim bullets towards enemies
+                    player.bullets.forEach(b => {
+                        let nearest = null, minDist = 300;
+                        enemies.forEach(e => {
+                            const dist = Math.hypot(e.x - b.x, e.y - b.y);
+                            if (dist < minDist) { minDist = dist; nearest = e; }
+                        });
+                        if (nearest) {
+                            const angle = Math.atan2(nearest.y + nearest.height/2 - b.y, nearest.x - b.x);
+                            b.vy = Math.sin(angle) * 3;
+                        }
+                    });
+                } else if (ultActive === 'godMode') {
+                    player.invincible = 10; // Keep invincible
+                }
+
+                if (ultTimer <= 0) {
+                    ultActive = null;
+                    slowMotionFactor = 1;
+                    updateUI();
+                }
+            }
+
+            // ============ MEGA UPGRADE: Rage Mode ============
+            const heli = HELICOPTERS[currentHelicopter];
+            let damageMultiplier = heli.damage * (1 + permanentDamage);
+            let fireRateMultiplier = 1 + permanentFireRate + perks.fireRate * 0.2;
+
+            if (isRageMode()) {
+                damageMultiplier *= 2;
+                fireRateMultiplier *= 1.5;
+                // Rage particles
+                if (frame % 3 === 0) {
+                    particles.push({
+                        x: player.x - 5, y: player.y + player.height/2 + (Math.random() - 0.5) * 20,
+                        vx: -4 - Math.random() * 3, vy: (Math.random() - 0.5) * 2,
+                        life: 25, color: ['#f00', '#f80', '#ff0'][Math.floor(Math.random() * 3)], size: 4 + Math.random() * 4
+                    });
+                }
+            }
+            if (ultActive === 'godMode') {
+                damageMultiplier *= 3;
+            }
+
+            // Store multipliers for use in damage calculations
+            player.currentDamageMultiplier = damageMultiplier;
+            player.currentFireRateMultiplier = fireRateMultiplier;
 
             // Kill streak timer
             if (killStreakTimer > 0) {
@@ -3367,7 +3759,7 @@
                                 }
 
                                 // Boss rush mode: spawn next boss
-                                if (cfg.bossRush) {
+                                if (difficulties[difficulty].bossRush) {
                                     setTimeout(() => spawnBoss(), 2000);
                                 }
                             }, 1500);
@@ -3595,6 +3987,83 @@
                 } else if (enemy.type === 'shielder') {
                     enemy.x -= enemy.speed * enemySpeedMod;
                     enemy.y += Math.sin(frame * 0.02) * 1.5 * enemySpeedMod;
+                // MEGA UPGRADE: New enemy behaviors
+                } else if (enemy.type === 'teleporter') {
+                    enemy.x -= enemy.speed * enemySpeedMod * 0.5;
+                    enemy.teleportTimer = (enemy.teleportTimer || 120) - 1;
+                    if (enemy.teleportTimer <= 0) {
+                        // Teleport effect
+                        for (let i = 0; i < 12; i++) {
+                            particles.push({
+                                x: enemy.x + enemy.width/2, y: enemy.y + enemy.height/2,
+                                vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
+                                life: 25, color: '#f0f', size: 5
+                            });
+                        }
+                        enemy.x = 300 + Math.random() * (canvas.width - 400);
+                        enemy.y = 80 + Math.random() * (canvas.height - 200);
+                        enemy.teleportTimer = 100 + Math.random() * 60;
+                        playSound('hit');
+                    }
+                } else if (enemy.type === 'splitter' || enemy.type === 'splitter_mini') {
+                    enemy.x -= enemy.speed * enemySpeedMod;
+                    enemy.y += Math.sin(frame * 0.03 + enemy.x * 0.01) * 2 * enemySpeedMod;
+                } else if (enemy.type === 'healer') {
+                    enemy.x -= enemy.speed * enemySpeedMod * 0.5;
+                    enemy.y += Math.cos(frame * 0.015) * 1.5 * enemySpeedMod;
+                    enemy.healTimer = (enemy.healTimer || 90) - 1;
+                    if (enemy.healTimer <= 0) {
+                        // Heal nearby enemies
+                        enemies.forEach(e => {
+                            if (e !== enemy && e.health < e.maxHealth) {
+                                const dist = Math.hypot(e.x - enemy.x, e.y - enemy.y);
+                                if (dist < 200) {
+                                    e.health = Math.min(e.health + 1, e.maxHealth);
+                                    // Heal beam effect
+                                    for (let i = 0; i < 5; i++) {
+                                        const t = i / 5;
+                                        particles.push({
+                                            x: enemy.x + (e.x - enemy.x) * t, y: enemy.y + (e.y - enemy.y) * t,
+                                            vx: 0, vy: -1, life: 15, color: '#0f0', size: 3
+                                        });
+                                    }
+                                }
+                            }
+                        });
+                        enemy.healTimer = 90;
+                    }
+                } else if (enemy.type === 'reflector') {
+                    enemy.x -= enemy.speed * enemySpeedMod;
+                    enemy.y += Math.sin(frame * 0.02) * 2 * enemySpeedMod;
+                    // Shield visual pulse
+                    enemy.shieldPulse = (enemy.shieldPulse || 0) + 0.1;
+                } else if (enemy.type === 'suicide_bomber') {
+                    // Chase player and explode on contact
+                    const dx = player.x - enemy.x;
+                    const dy = player.y + player.height/2 - (enemy.y + enemy.height/2);
+                    const dist = Math.hypot(dx, dy);
+                    enemy.x += (dx / dist) * enemy.speed * enemySpeedMod;
+                    enemy.y += (dy / dist) * enemy.speed * enemySpeedMod;
+                    // Warning effect - blink faster as closer
+                    enemy.blinkRate = Math.max(5, 30 - Math.floor(dist / 20));
+                    // Trail
+                    if (frame % 4 === 0) {
+                        particles.push({
+                            x: enemy.x + enemy.width, y: enemy.y + enemy.height/2,
+                            vx: 2, vy: (Math.random() - 0.5) * 2,
+                            life: 15, color: '#f80', size: 5
+                        });
+                    }
+                    // Explode on contact!
+                    if (dist < 40 && player.invincible === 0 && activePowerups.shield === 0) {
+                        lives -= 2;
+                        player.invincible = 90;
+                        createExplosion(enemy.x, enemy.y, true);
+                        screenShake = 25;
+                        updateUI();
+                        if (lives <= 0) gameOver();
+                        return false;
+                    }
                 } else {
                     enemy.x -= enemy.speed * enemySpeedMod;
                 }
@@ -3699,6 +4168,23 @@
                     }
 
                     if (checkCollision(bullet, enemy)) {
+                        // MEGA UPGRADE: Reflector has 50% chance to reflect bullets
+                        if (enemy.type === 'reflector' && !bullet.isReflected && Math.random() < 0.5) {
+                            bullet.speed = -bullet.speed * 0.8; // Reverse direction
+                            bullet.isReflected = true;
+                            bullet.color = '#f00'; // Change color to show it's reflected
+                            // Reflection effect
+                            for (let r = 0; r < 5; r++) {
+                                particles.push({
+                                    x: bullet.x, y: bullet.y,
+                                    vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5,
+                                    life: 15, color: '#ccc', size: 3
+                                });
+                            }
+                            playSound('hit');
+                            continue; // Don't damage the reflector
+                        }
+
                         // Piercing - bullet goes through (but reduce damage slightly)
                         if (activePowerups.piercing > 0) {
                             enemy.health -= (bullet.damage || 1) * 0.8;
@@ -3713,6 +4199,19 @@
                             const pts = enemy.points * comboMultiplier * (perks.doubleScore ? 2 : 1);
                             score += pts;
                             addCombo();
+
+                            // MEGA UPGRADE: Coins and Ultimate charge
+                            const coinDrop = 1 + Math.floor(Math.random() * 5 * (1 + luckBonus));
+                            coins += coinDrop;
+                            totalKills++;
+                            ultCharge = Math.min(100, ultCharge + 1 + (comboMultiplier - 1) * 0.5);
+
+                            // Vampire helicopter: chance to heal on kill
+                            if (HELICOPTERS[currentHelicopter].special === 'lifesteal' && Math.random() < 0.05) {
+                                lives = Math.min(lives + 1, maxLives);
+                                floatingTexts.push({x: player.x, y: player.y - 20, text: '+1 LIFE', color: '#0f0', life: 60, size: 14});
+                            }
+
                             updateUI();
                             unlockAchievement('first_blood');
                             // Track drone kills
@@ -3730,8 +4229,20 @@
                                 enemies.forEach(e => {
                                     if (e !== enemy && Math.hypot(e.x - enemy.x, e.y - enemy.y) < 80) {
                                         e.health -= 2;
-                                        createExplosion(e.x + e.width/2, e.y + e.height/2, false);
                                     }
+                                });
+                            }
+
+                            // MEGA UPGRADE: Splitter spawns 2 mini splitters
+                            if (enemy.type === 'splitter' && !enemy.isMini) {
+                                for (let s = 0; s < 2; s++) {
+                                    const mini = createEnemy('splitter_mini', enemy.x, enemy.y + (s === 0 ? -25 : 25));
+                                    mini.isMini = true;
+                                    enemies.push(mini);
+                                }
+                                floatingTexts.push({
+                                    x: enemy.x, y: enemy.y - 10,
+                                    text: 'SPLIT!', color: '#0f8', life: 30, size: 12
                                 });
                             }
 
@@ -3767,10 +4278,21 @@
                 if (newBiome !== currentBiome) {
                     switchBiome(newBiome);
                 }
-                floatingTexts.push({
-                    x: canvas.width/2, y: canvas.height/3,
-                    text: 'LEVEL ' + level + '!', color: '#0ff', life: 90, size: 28
-                });
+
+                // MEGA UPGRADE: Show shop every 5 levels
+                if (level % 5 === 0) {
+                    floatingTexts.push({
+                        x: canvas.width/2, y: canvas.height/3,
+                        text: '🏪 SHOP TIME! 🏪', color: '#fd0', life: 90, size: 24
+                    });
+                    setTimeout(() => showShop(), 1000);
+                } else {
+                    floatingTexts.push({
+                        x: canvas.width/2, y: canvas.height/3,
+                        text: 'LEVEL ' + level + '!', color: '#0ff', life: 90, size: 28
+                    });
+                }
+
                 playSound('levelup');
                 unlockAchievement('survivor');
                 updateUI();
@@ -3881,6 +4403,14 @@
                     (Math.random() - 0.5) * screenShake,
                     (Math.random() - 0.5) * screenShake
                 );
+            }
+
+            // MEGA UPGRADE: Distortion effect
+            if (distortion > 0.001) {
+                ctx.translate(canvas.width/2, canvas.height/2);
+                ctx.scale(1 + distortion, 1 - distortion * 0.5);
+                ctx.translate(-canvas.width/2, -canvas.height/2);
+                distortion *= 0.92;
             }
 
             // Sky gradient - biome-based
@@ -4725,6 +5255,36 @@
             if (activePowerups.ghost > 0) {
                 ctx.fillStyle = 'rgba(100, 100, 100, 0.1)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // MEGA UPGRADE: Rage Mode vignette
+            if (isRageMode()) {
+                const rageGrad = ctx.createRadialGradient(
+                    canvas.width/2, canvas.height/2, canvas.height * 0.3,
+                    canvas.width/2, canvas.height/2, canvas.height * 0.8
+                );
+                rageGrad.addColorStop(0, 'transparent');
+                rageGrad.addColorStop(1, 'rgba(255, 0, 0, 0.25)');
+                ctx.fillStyle = rageGrad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // MEGA UPGRADE: Ultimate effect overlays
+            if (ultActive === 'bulletTime') {
+                ctx.fillStyle = 'rgba(0, 100, 255, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else if (ultActive === 'godMode') {
+                ctx.fillStyle = `rgba(255, 215, 0, ${0.05 + Math.sin(frame * 0.2) * 0.05})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // MEGA UPGRADE: Screen flash effect
+            if (flashAlpha > 0.01) {
+                ctx.fillStyle = flashColor || '#fff';
+                ctx.globalAlpha = flashAlpha;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.globalAlpha = 1;
+                flashAlpha *= 0.9;
             }
 
             ctx.restore();
