@@ -2690,6 +2690,7 @@
             document.getElementById('pauseScreen').style.display = 'none';
             document.getElementById('startScreen').style.display = 'flex';
             if (musicPlaying) toggleMusic();
+            stopBossMusic(); // Stop boss music when quitting
             // Resume menu music if it was on
             if (localStorage.getItem('menuMusicOn') !== 'false') {
                 playMenuMusic();
