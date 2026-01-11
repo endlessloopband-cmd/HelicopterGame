@@ -853,6 +853,8 @@
             shockwaves = [];
             debris = [];
             boss = null;
+            miniBoss = null;
+            mines = [];
             activePowerups = { rapid: 0, spread: 0, shield: 0 };
             weather.lightning = 0;
             weather.thunderTimer = 0;
@@ -979,8 +981,14 @@
             if (activePowerups.shield > 0) pwrText += '🛡️SHIELD ';
             document.getElementById('powerupIndicator').textContent = pwrText;
 
-            const weapons = { normal: 'NORMAL', spread: 'SPREAD', laser: `LASER [${Math.floor(laserCharge)}%]`, rocket: `ROCKETS [${rocketAmmo}]` };
-            document.getElementById('weaponIndicator').textContent = 'WEAPON: ' + weapons[currentWeapon];
+            const weapons = {
+                normal: { num: 1, name: 'NORMAL' },
+                spread: { num: 2, name: 'SPREAD' },
+                laser: { num: 3, name: `LASER [${Math.floor(laserCharge)}%]` },
+                rocket: { num: 4, name: `ROCKETS [${rocketAmmo}]` }
+            };
+            const w = weapons[currentWeapon];
+            document.getElementById('weaponIndicator').textContent = `[${w.num}] ${w.name}`;
 
             // Godlike overlay
             document.getElementById('godlikeOverlay').style.opacity = combo >= 20 ? '0.8' : combo >= 10 ? '0.4' : '0';
@@ -1044,6 +1052,23 @@
                 boss.health -= 30;
                 createExplosion(boss.x + boss.width/2, boss.y + boss.height/2, true);
             }
+
+            // Mini-boss damage
+            if (miniBoss) {
+                miniBoss.health -= 20;
+                createExplosion(miniBoss.x + miniBoss.width/2, miniBoss.y + miniBoss.height/2, true);
+                if (miniBoss.health <= 0) {
+                    score += 2000 * level;
+                    floatingTexts.push({ x: miniBoss.x, y: miniBoss.y, text: 'MINI-BOSS DOWN!', color: '#f80', life: 80, size: 14 });
+                    miniBoss = null;
+                }
+            }
+
+            // Clear all mines
+            mines.forEach(m => {
+                createExplosion(m.x, m.y, false);
+            });
+            mines = [];
 
             // Nuclear flash
             for (let i = 0; i < 50; i++) {
@@ -1109,42 +1134,328 @@
         }
 
         // ============ ENEMY SPAWNING ============
-        function spawnEnemy() {
-            if (boss) return;
+        // Mines array
+        let mines = [];
 
+        // Mini-boss system
+        let miniBoss = null;
+        const miniBossTypes = [
+            { name: 'STRIKE LEADER', health: 50, width: 80, height: 35, color: '#a44', escort: 3 },
+            { name: 'HEAVY BOMBER', health: 80, width: 120, height: 55, color: '#4a4', bombRate: 40 },
+            { name: 'STEALTH HUNTER', health: 40, width: 70, height: 30, color: '#448', cloakDuration: 120 }
+        ];
+
+        // Formation patterns
+        const formations = {
+            v: [{x:0,y:0}, {x:-35,y:35}, {x:35,y:35}, {x:-70,y:70}, {x:70,y:70}],
+            wall: [{x:0,y:-50}, {x:0,y:-25}, {x:0,y:0}, {x:0,y:25}, {x:0,y:50}],
+            circle: [{x:0,y:-40}, {x:35,y:-20}, {x:35,y:20}, {x:0,y:40}, {x:-35,y:20}, {x:-35,y:-20}],
+            snake: [{x:0,y:0}, {x:40,y:15}, {x:80,y:0}, {x:120,y:-15}, {x:160,y:0}]
+        };
+
+        function spawnFormation(formationType, enemyType) {
+            const pattern = formations[formationType];
+            const baseX = canvas.width + 100;
+            const baseY = 150 + Math.random() * (canvas.height - 400);
             const cfg = difficulties[difficulty];
-            const types = ['fighter', 'bomber', 'jet', 'helicopter', 'turret', 'drone'];
-            let available = types.slice(0, Math.min(types.length, 2 + Math.floor(level / 2)));
-            const type = available[Math.floor(Math.random() * available.length)];
 
+            pattern.forEach((pos, i) => {
+                setTimeout(() => {
+                    const enemy = createEnemy(enemyType || 'fighter', baseX + pos.x, baseY + pos.y);
+                    enemy.formation = formationType;
+                    enemy.formationIndex = i;
+                    enemy.formationBaseY = baseY;
+                    enemies.push(enemy);
+                }, i * 100);
+            });
+        }
+
+        function createEnemy(type, x, y) {
+            const cfg = difficulties[difficulty];
             const isGround = type === 'turret';
-            const enemy = {
-                x: canvas.width + 50,
-                y: isGround ? canvas.height - 100 : Math.random() * (canvas.height - 300) + 100,
-                width: { fighter: 55, bomber: 100, jet: 60, helicopter: 75, turret: 40, drone: 30 }[type],
-                height: { fighter: 24, bomber: 40, jet: 20, helicopter: 28, turret: 35, drone: 30 }[type],
-                speed: { fighter: 3, bomber: 1.5, jet: 6, helicopter: 2.5, turret: 0.8, drone: 4 }[type] * cfg.enemySpeed,
+
+            // Extended enemy properties
+            const props = {
+                fighter: { width: 55, height: 24, speed: 3, health: 1, points: 100, shootCooldown: 1500, glowColor: '#4af' },
+                bomber: { width: 100, height: 40, speed: 1.5, health: 4, points: 500, shootCooldown: 800, glowColor: '#4a4' },
+                jet: { width: 60, height: 20, speed: 6, health: 1, points: 200, shootCooldown: 2000, glowColor: '#f44' },
+                helicopter: { width: 75, height: 28, speed: 2.5, health: 2, points: 300, shootCooldown: 1000, glowColor: '#f84' },
+                turret: { width: 40, height: 35, speed: 0.8, health: 2, points: 150, shootCooldown: 600, glowColor: '#ff0' },
+                drone: { width: 30, height: 30, speed: 4, health: 1, points: 250, shootCooldown: 1200, glowColor: '#f0f' },
+                // NEW ENEMIES
+                kamikaze: { width: 35, height: 25, speed: 7, health: 1, points: 150, shootCooldown: 9999, glowColor: '#f00' },
+                blinker: { width: 28, height: 28, speed: 2, health: 2, points: 300, shootCooldown: 800, glowColor: '#0ff' },
+                shielder: { width: 65, height: 40, speed: 1.5, health: 3, points: 400, shootCooldown: 1200, glowColor: '#00f', shieldHP: 5 },
+                miner: { width: 50, height: 30, speed: 2, health: 2, points: 250, shootCooldown: 9999, glowColor: '#0f0' },
+                scout: { width: 25, height: 18, speed: 7, health: 1, points: 350, shootCooldown: 1500, glowColor: '#ff0' }
+            };
+
+            const p = props[type] || props.fighter;
+
+            return {
+                x: x !== undefined ? x : canvas.width + 50,
+                y: y !== undefined ? y : (isGround ? canvas.height - 100 : Math.random() * (canvas.height - 300) + 100),
+                width: p.width,
+                height: p.height,
+                speed: p.speed * cfg.enemySpeed,
                 type,
                 bullets: [],
                 lastShot: Date.now(),
-                shootCooldown: { fighter: 1500, bomber: 800, jet: 2000, helicopter: 1000, turret: 600, drone: 1200 }[type],
-                health: { fighter: 1, bomber: 4, jet: 1, helicopter: 2, turret: 2, drone: 1 }[type],
-                maxHealth: { fighter: 1, bomber: 4, jet: 1, helicopter: 2, turret: 2, drone: 1 }[type],
-                points: { fighter: 100, bomber: 500, jet: 200, helicopter: 300, turret: 150, drone: 250 }[type],
+                shootCooldown: p.shootCooldown,
+                health: p.health,
+                maxHealth: p.health,
+                points: p.points,
                 amplitude: Math.random() * 50 + 20,
                 frequency: Math.random() * 0.04 + 0.01,
-                startY: 0,
-                glowColor: { fighter: '#4af', bomber: '#4a4', jet: '#f44', helicopter: '#f84', turret: '#ff0', drone: '#f0f' }[type]
+                startY: y !== undefined ? y : 0,
+                glowColor: p.glowColor,
+                // Special properties
+                shieldHP: p.shieldHP || 0,
+                shieldMaxHP: p.shieldHP || 0,
+                teleportTimer: type === 'blinker' ? 150 + Math.random() * 60 : 0,
+                teleportWarning: 0,
+                mineTimer: type === 'miner' ? 90 : 0,
+                cloaked: false,
+                cloakTimer: 0,
+                dodgeCooldown: 0,
+                afterImages: []
             };
+        }
+
+        function spawnEnemy() {
+            if (boss || miniBoss) return;
+
+            const cfg = difficulties[difficulty];
+
+            // Check for mini-boss spawn (levels 3, 7, 13, etc - primes)
+            if ([3, 7, 11, 13, 17, 19, 23].includes(level) && !miniBoss && enemies.length === 0 && Math.random() < 0.3) {
+                spawnMiniBoss();
+                return;
+            }
+
+            // Chance to spawn formation
+            if (level >= 3 && Math.random() < 0.15) {
+                const formTypes = Object.keys(formations);
+                const formType = formTypes[Math.floor(Math.random() * formTypes.length)];
+                spawnFormation(formType, 'fighter');
+                return;
+            }
+
+            // Regular enemy types + new enemies based on level
+            const baseTypes = ['fighter', 'bomber', 'jet', 'helicopter', 'turret', 'drone'];
+            const newTypes = ['kamikaze', 'blinker', 'shielder', 'miner', 'scout'];
+
+            let available = baseTypes.slice(0, Math.min(baseTypes.length, 2 + Math.floor(level / 2)));
+
+            // Add new enemy types progressively
+            if (level >= 2) available.push('kamikaze');
+            if (level >= 4) available.push('blinker');
+            if (level >= 6) available.push('shielder');
+            if (level >= 8) available.push('miner');
+            if (level >= 10) available.push('scout');
+
+            const type = available[Math.floor(Math.random() * available.length)];
+            const enemy = createEnemy(type);
             enemy.startY = enemy.y;
             enemies.push(enemy);
         }
 
+        function spawnMiniBoss() {
+            const mbType = miniBossTypes[Math.floor(Math.random() * miniBossTypes.length)];
+            playSound('boss');
+            floatingTexts.push({
+                x: canvas.width / 2, y: 150,
+                text: '⚠ ' + mbType.name + ' ⚠', color: '#f80', life: 120, size: 16
+            });
+
+            miniBoss = {
+                x: canvas.width + 50,
+                y: canvas.height / 2 - mbType.height / 2,
+                width: mbType.width,
+                height: mbType.height,
+                speed: 2,
+                health: mbType.health + level * 5,
+                maxHealth: mbType.health + level * 5,
+                name: mbType.name,
+                type: mbType.name,
+                color: mbType.color,
+                bullets: [],
+                lastShot: 0,
+                shootCooldown: 40,
+                escort: mbType.escort || 0,
+                bombRate: mbType.bombRate || 0,
+                cloakDuration: mbType.cloakDuration || 0,
+                cloaked: false,
+                cloakTimer: 0,
+                escortSpawned: false
+            };
+
+            // Spawn escort for Strike Leader
+            if (miniBoss.escort > 0) {
+                for (let i = 0; i < miniBoss.escort; i++) {
+                    setTimeout(() => {
+                        if (miniBoss) {
+                            const escort = createEnemy('fighter', canvas.width + 80, miniBoss.y + (i - 1) * 50);
+                            escort.isEscort = true;
+                            enemies.push(escort);
+                        }
+                    }, 500 + i * 300);
+                }
+            }
+        }
+
+        function spawnMine(x, y) {
+            mines.push({
+                x, y,
+                radius: 12,
+                timer: 300, // 5 seconds
+                pulse: 0,
+                armed: false
+            });
+        }
+
         const bossTypes = [
-            { name: 'MEGA BOMBER', color: '#2a4a2a', width: 220, height: 160, healthMult: 1 },
-            { name: 'CYBER FORTRESS', color: '#2a2a4a', width: 250, height: 180, healthMult: 1.5 },
-            { name: 'DEATH MACHINE', color: '#4a2a2a', width: 200, height: 200, healthMult: 2 }
+            { name: 'MEGA BOMBER', color: '#2a4a2a', width: 220, height: 160, healthMult: 1, specialAttack: 'carpet_bomb' },
+            { name: 'CYBER FORTRESS', color: '#2a2a4a', width: 250, height: 180, healthMult: 1.5, specialAttack: 'laser_sweep' },
+            { name: 'DEATH MACHINE', color: '#4a2a2a', width: 200, height: 200, healthMult: 2, specialAttack: 'transform' }
         ];
+
+        // Boss music settings per phase
+        let bossMusicBPM = 120;
+        let bossMusicPhase = 1;
+        let bossMusicInterval = null;
+
+        function startBossMusic(phase) {
+            bossMusicPhase = phase;
+            bossMusicBPM = phase === 1 ? 120 : phase === 2 ? 140 : 160;
+            if (bossMusicInterval) clearInterval(bossMusicInterval);
+            bossMusicInterval = setInterval(playBossMusicBeat, 60000 / bossMusicBPM / 4);
+        }
+
+        function stopBossMusic() {
+            if (bossMusicInterval) {
+                clearInterval(bossMusicInterval);
+                bossMusicInterval = null;
+            }
+        }
+
+        let bossMusicBeat = 0;
+        function playBossMusicBeat() {
+            if (!audioCtx || !boss) return;
+            const now = audioCtx.currentTime;
+            const phase = bossMusicPhase;
+
+            // Kick drum on beats 0, 4, 8, 12
+            if (bossMusicBeat % 4 === 0) {
+                const kick = audioCtx.createOscillator();
+                const kickGain = audioCtx.createGain();
+                kick.connect(kickGain);
+                kickGain.connect(audioCtx.destination);
+                kick.type = 'sine';
+                kick.frequency.setValueAtTime(150, now);
+                kick.frequency.exponentialRampToValueAtTime(30, now + 0.1);
+                kickGain.gain.setValueAtTime(0.25, now);
+                kickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                kick.start(now);
+                kick.stop(now + 0.1);
+            }
+
+            // Bass on every beat (phase 1+)
+            if (bossMusicBeat % 2 === 0) {
+                const bass = audioCtx.createOscillator();
+                const bassGain = audioCtx.createGain();
+                bass.connect(bassGain);
+                bassGain.connect(audioCtx.destination);
+                bass.type = 'sawtooth';
+                const bassNotes = [55, 55, 65, 55, 55, 55, 73, 65];
+                bass.frequency.setValueAtTime(bassNotes[Math.floor(bossMusicBeat/2) % 8], now);
+                bassGain.gain.setValueAtTime(0.12, now);
+                bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                bass.start(now);
+                bass.stop(now + 0.15);
+            }
+
+            // Hi-hat (phase 2+)
+            if (phase >= 2 && bossMusicBeat % 2 === 1) {
+                const hat = audioCtx.createOscillator();
+                const hatGain = audioCtx.createGain();
+                hat.connect(hatGain);
+                hatGain.connect(audioCtx.destination);
+                hat.type = 'square';
+                hat.frequency.setValueAtTime(1000 + Math.random() * 500, now);
+                hatGain.gain.setValueAtTime(0.04, now);
+                hatGain.gain.exponentialRampToValueAtTime(0.01, now + 0.02);
+                hat.start(now);
+                hat.stop(now + 0.02);
+            }
+
+            // Melody (phase 2+)
+            if (phase >= 2 && bossMusicBeat % 4 === 0) {
+                const mel = audioCtx.createOscillator();
+                const melGain = audioCtx.createGain();
+                mel.connect(melGain);
+                melGain.connect(audioCtx.destination);
+                mel.type = 'square';
+                const melodyNotes = [330, 392, 440, 392, 330, 294, 330, 392];
+                mel.frequency.setValueAtTime(melodyNotes[Math.floor(bossMusicBeat/4) % 8], now);
+                melGain.gain.setValueAtTime(0.06, now);
+                melGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                mel.start(now);
+                mel.stop(now + 0.1);
+            }
+
+            // Arpeggio (phase 3)
+            if (phase === 3) {
+                const arpNotes = [220, 277, 330, 440];
+                const arp = audioCtx.createOscillator();
+                const arpGain = audioCtx.createGain();
+                arp.connect(arpGain);
+                arpGain.connect(audioCtx.destination);
+                arp.type = 'sine';
+                arp.frequency.setValueAtTime(arpNotes[bossMusicBeat % 4], now);
+                arpGain.gain.setValueAtTime(0.08, now);
+                arpGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                arp.start(now);
+                arp.stop(now + 0.05);
+            }
+
+            // Tension notes (phase 3)
+            if (phase === 3 && bossMusicBeat % 8 === 0) {
+                const tension = audioCtx.createOscillator();
+                const tensionGain = audioCtx.createGain();
+                tension.connect(tensionGain);
+                tensionGain.connect(audioCtx.destination);
+                tension.type = 'sawtooth';
+                tension.frequency.setValueAtTime(110, now);
+                tension.frequency.linearRampToValueAtTime(220, now + 0.3);
+                tensionGain.gain.setValueAtTime(0.1, now);
+                tensionGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                tension.start(now);
+                tension.stop(now + 0.3);
+            }
+
+            bossMusicBeat++;
+        }
+
+        function playPhaseTransition() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            // Drop effect - dramatic pause then hit
+            [0, 200, 400].forEach((delay, i) => {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(110 * (i + 1), audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.2);
+                }, delay);
+            });
+        }
 
         function spawnBoss() {
             playSound('boss');
@@ -1153,33 +1464,234 @@
             weather.lightning = 60;
 
             const bt = bossTypes[bossType % 3];
+            const baseHealth = (100 + level * 30) * bt.healthMult;
+
             boss = {
                 x: canvas.width + 100,
                 y: canvas.height / 2 - bt.height/2,
                 width: bt.width,
                 height: bt.height,
                 speed: 1,
-                health: (100 + level * 30) * bt.healthMult,
-                maxHealth: (100 + level * 30) * bt.healthMult,
+                health: baseHealth,
+                maxHealth: baseHealth,
                 bullets: [],
                 lastShot: Date.now(),
+                // Enhanced turrets with individual health
                 turrets: [
-                    { x: 30, y: 25, lastShot: 0 },
-                    { x: 30, y: bt.height - 25, lastShot: 0 },
-                    { x: bt.width - 30, y: bt.height/2, lastShot: 0 }
+                    { x: 30, y: 30, lastShot: 0, health: 25, maxHealth: 25, alive: true },
+                    { x: 30, y: bt.height - 30, lastShot: 0, health: 25, maxHealth: 25, alive: true },
+                    { x: bt.width - 40, y: bt.height/2, lastShot: 0, health: 25, maxHealth: 25, alive: true }
                 ],
-                phase: 0,
+                // Engines - weak points
+                engines: [
+                    { x: bt.width - 20, y: 20, health: 20, maxHealth: 20, destroyed: false },
+                    { x: bt.width - 20, y: bt.height - 40, health: 20, maxHealth: 20, destroyed: false }
+                ],
+                // Core - exposed when 2+ turrets destroyed
+                core: { x: bt.width/2 - 25, y: bt.height/2 - 25, width: 50, height: 50, exposed: false },
+                // Phase system (1, 2, 3)
+                currentPhase: 1,
+                phase: 0, // attack pattern phase
                 phaseTimer: 0,
+                lastPhaseChange: 0,
                 type: bossType % 3,
                 name: bt.name,
                 color: bt.color,
-                enraged: false
+                specialAttack: bt.specialAttack,
+                enraged: false,
+                specialAttackTimer: 0,
+                transformState: 0 // for Death Machine
             };
 
             bossType++;
             document.getElementById('bossHealth').style.display = 'block';
             document.getElementById('bossName').style.display = 'block';
             document.getElementById('bossName').textContent = `★ ${bt.name} Mk.${Math.ceil(level/5)} ★`;
+
+            // Start phase 1 music
+            startBossMusic(1);
+        }
+
+        function updateBossPhase() {
+            if (!boss) return;
+            const healthPercent = boss.health / boss.maxHealth;
+            let newPhase = boss.currentPhase;
+
+            if (healthPercent > 0.66) newPhase = 1;
+            else if (healthPercent > 0.33) newPhase = 2;
+            else newPhase = 3;
+
+            if (newPhase !== boss.currentPhase) {
+                boss.currentPhase = newPhase;
+                boss.lastPhaseChange = frame;
+                playPhaseTransition();
+                startBossMusic(newPhase);
+                screenShake = 20;
+
+                // Phase transition effects
+                const phaseName = newPhase === 2 ? 'PHASE 2: AGGRESSION!' : 'PHASE 3: BERSERK!';
+                floatingTexts.push({
+                    x: boss.x + boss.width/2, y: boss.y - 50,
+                    text: phaseName, color: newPhase === 3 ? '#f00' : '#ff0', life: 120, size: 18
+                });
+
+                // Drop loot on phase change
+                if (newPhase === 2) {
+                    dropBossLoot(boss.x + boss.width/2, boss.y + boss.height/2, 'life');
+                } else if (newPhase === 3) {
+                    dropBossLoot(boss.x + boss.width/2, boss.y + boss.height/2, 'bomb');
+                    boss.enraged = true;
+                }
+
+                playVoice(newPhase === 2 ? 'UNSTOPPABLE' : 'GODLIKE');
+            }
+
+            // Check if core should be exposed
+            const aliveTurrets = boss.turrets.filter(t => t.alive).length;
+            boss.core.exposed = aliveTurrets <= 1;
+        }
+
+        function dropBossLoot(x, y, type) {
+            const colors = { life: '#f0f', bomb: '#f80', rocket: '#fa0', rapid: '#ff0', spread: '#00f', shield: '#0f0' };
+            powerups.push({
+                x, y,
+                type: type || ['rapid', 'spread', 'shield', 'rocket'][Math.floor(Math.random() * 4)],
+                color: colors[type] || '#ff0',
+                width: 28, height: 28, vy: -3, pulse: 0,
+                fromBoss: true
+            });
+
+            // Sparkle effect
+            for (let i = 0; i < 10; i++) {
+                particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8 - 2,
+                    life: 40,
+                    color: '#ff0',
+                    size: 4
+                });
+            }
+        }
+
+        function hitBossComponent(bullet) {
+            if (!boss) return false;
+            const b = boss;
+            const bx = bullet.x, by = bullet.y;
+            const damage = bullet.damage || 1;
+            let hit = false;
+
+            // Check turrets
+            for (let t of b.turrets) {
+                if (!t.alive) continue;
+                const tx = b.x + t.x, ty = b.y + t.y;
+                if (Math.hypot(bx - tx, by - ty) < 20) {
+                    t.health -= damage;
+                    hit = true;
+                    if (t.health <= 0) {
+                        t.alive = false;
+                        createExplosion(tx, ty, true);
+                        floatingTexts.push({ x: tx, y: ty - 20, text: 'TURRET DOWN!', color: '#0ff', life: 60, size: 12 });
+                        score += 500;
+                        playSound('megaExplosion');
+                        if (Math.random() < 0.4) dropBossLoot(tx, ty);
+                    }
+                    break;
+                }
+            }
+
+            // Check engines (2x damage)
+            if (!hit) {
+                for (let e of b.engines) {
+                    if (e.destroyed) continue;
+                    const ex = b.x + e.x, ey = b.y + e.y;
+                    if (Math.abs(bx - ex) < 25 && Math.abs(by - ey) < 25) {
+                        e.health -= damage * 2;
+                        b.health -= damage; // Also damages main health
+                        hit = true;
+                        if (e.health <= 0) {
+                            e.destroyed = true;
+                            createExplosion(ex, ey, true);
+                            b.speed *= 0.7; // Slow down boss
+                            floatingTexts.push({ x: ex, y: ey - 20, text: 'ENGINE HIT!', color: '#f80', life: 60, size: 12 });
+                            score += 300;
+                            dropBossLoot(ex, ey, 'rocket');
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // Check core (3x damage when exposed)
+            if (!hit && b.core.exposed) {
+                const cx = b.x + b.core.x + b.core.width/2;
+                const cy = b.y + b.core.y + b.core.height/2;
+                if (Math.abs(bx - cx) < b.core.width/2 + 10 && Math.abs(by - cy) < b.core.height/2 + 10) {
+                    b.health -= damage * 3;
+                    hit = true;
+                    floatingTexts.push({ x: cx, y: cy - 30, text: 'CRITICAL!', color: '#f00', life: 30, size: 14 });
+                }
+            }
+
+            // Normal hit on body
+            if (!hit) {
+                if (bx > b.x && bx < b.x + b.width && by > b.y && by < b.y + b.height) {
+                    b.health -= damage;
+                    hit = true;
+                }
+            }
+
+            return hit;
+        }
+
+        function bossSpecialAttack() {
+            if (!boss || boss.currentPhase < 3) return;
+            const b = boss;
+
+            if (b.specialAttack === 'carpet_bomb') {
+                // Mega Bomber: rain of bombs from above
+                for (let i = 0; i < 8; i++) {
+                    setTimeout(() => {
+                        if (!boss) return;
+                        const bx = 100 + Math.random() * (canvas.width - 200);
+                        b.bullets.push({
+                            x: bx, y: -20,
+                            width: 16, height: 16,
+                            speed: 4 + Math.random() * 2,
+                            angle: Math.PI / 2,
+                            isBomb: true
+                        });
+                    }, i * 150);
+                }
+            } else if (b.specialAttack === 'laser_sweep') {
+                // Cyber Fortress: horizontal laser sweep
+                b.laserSweep = { active: true, y: b.y + 30, direction: 1, timer: 60 };
+            } else if (b.specialAttack === 'transform') {
+                // Death Machine: transformation
+                b.transformState = (b.transformState + 1) % 3;
+                floatingTexts.push({
+                    x: b.x + b.width/2, y: b.y - 30,
+                    text: 'TRANSFORM!', color: '#f0f', life: 60, size: 16
+                });
+                screenShake = 15;
+                // Change attack pattern
+                if (b.transformState === 1) {
+                    // Rapid fire mode
+                    b.turrets.forEach(t => { if (t.alive) t.fireRate = 0.5; });
+                } else if (b.transformState === 2) {
+                    // Spiral attack
+                    for (let i = 0; i < 16; i++) {
+                        setTimeout(() => {
+                            if (!boss) return;
+                            const angle = (i / 16) * Math.PI * 2;
+                            b.bullets.push({
+                                x: b.x + b.width/2, y: b.y + b.height/2,
+                                width: 10, height: 10, speed: 4, angle
+                            });
+                        }, i * 50);
+                    }
+                }
+            }
         }
 
         // ============ DRAWING ============
@@ -1192,14 +1704,20 @@
             ctx.shadowBlur = 0;
         }
 
-        function drawPixelPlane(x, y, w, h, type, damaged = false, glowColor = '#fff') {
+        function drawPixelPlane(x, y, w, h, type, damaged = false, glowColor = '#fff', enemy = null) {
             const colors = {
                 fighter: { body: '#4a7dc4', dark: '#2d5a9e', cockpit: '#adf', accent: '#f44' },
                 bomber: { body: '#5a7e23', dark: '#3a5e12', cockpit: '#adf', accent: '#fa0' },
                 jet: { body: '#9b1010', dark: '#6b0000', cockpit: '#adf', accent: '#f60' },
                 helicopter: { body: '#c55', dark: '#933', cockpit: '#adf', accent: '#ff0' },
                 turret: { body: '#666', dark: '#444', cockpit: '#f00', accent: '#ff0' },
-                drone: { body: '#808', dark: '#606', cockpit: '#f0f', accent: '#0ff' }
+                drone: { body: '#808', dark: '#606', cockpit: '#f0f', accent: '#0ff' },
+                // NEW ENEMY COLORS
+                kamikaze: { body: '#c22', dark: '#811', cockpit: '#f88', accent: '#ff0' },
+                blinker: { body: '#2cc', dark: '#1aa', cockpit: '#8ff', accent: '#fff' },
+                shielder: { body: '#22c', dark: '#119', cockpit: '#88f', accent: '#0ff' },
+                miner: { body: '#2a2', dark: '#181', cockpit: '#8f8', accent: '#ff0' },
+                scout: { body: '#cc2', dark: '#991', cockpit: '#ff8', accent: '#fff' }
             };
             const c = colors[type] || colors.fighter;
 
@@ -1282,18 +1800,24 @@
 
             ctx.save();
 
-            // Enraged glow
-            if (b.enraged) {
+            // Phase-based visual effects
+            if (b.currentPhase === 3) {
+                // Berserk glow - intense pulsing
                 ctx.shadowColor = '#f00';
-                ctx.shadowBlur = 30 + Math.sin(frame * 0.2) * 10;
+                ctx.shadowBlur = 40 + Math.sin(frame * 0.3) * 20;
+            } else if (b.currentPhase === 2) {
+                ctx.shadowColor = '#ff0';
+                ctx.shadowBlur = 20 + Math.sin(frame * 0.15) * 10;
             }
 
             // Main body with neon outline
             ctx.fillStyle = bt.color;
             ctx.fillRect(b.x + 20, b.y + 30, b.width - 40, b.height - 60);
 
-            ctx.strokeStyle = b.enraged ? '#f00' : '#0ff';
-            ctx.lineWidth = 2;
+            // Phase-colored outline
+            const phaseColors = ['#0ff', '#ff0', '#f00'];
+            ctx.strokeStyle = phaseColors[b.currentPhase - 1];
+            ctx.lineWidth = b.currentPhase === 3 ? 4 : 2;
             ctx.strokeRect(b.x + 20, b.y + 30, b.width - 40, b.height - 60);
 
             // Wings
@@ -1307,78 +1831,181 @@
             ctx.fillRect(b.x + 15, b.y + b.height/2 - 20, 35, 40);
             ctx.shadowBlur = 0;
 
-            // Engines with animated flames
-            const enginePositions = [
-                { x: b.x + 60, y: b.y + 15 },
-                { x: b.x + 60, y: b.y + b.height - 35 },
-                { x: b.x + b.width - 80, y: b.y + 15 },
-                { x: b.x + b.width - 80, y: b.y + b.height - 35 }
-            ];
+            // Draw engines (weak points)
+            b.engines.forEach((eng, i) => {
+                const ex = b.x + eng.x;
+                const ey = b.y + eng.y;
 
-            enginePositions.forEach(pos => {
-                ctx.fillStyle = '#222';
-                ctx.fillRect(pos.x, pos.y, 30, 20);
+                if (eng.destroyed) {
+                    // Destroyed engine - smoke and fire
+                    ctx.fillStyle = '#222';
+                    ctx.fillRect(ex - 15, ey, 30, 20);
+                    if (frame % 4 === 0) {
+                        particles.push({
+                            x: ex, y: ey + 10,
+                            vx: 2 + Math.random(), vy: -1 - Math.random(),
+                            life: 30, color: '#333', size: 8
+                        });
+                    }
+                } else {
+                    // Active engine with weak point indicator
+                    ctx.fillStyle = '#444';
+                    ctx.fillRect(ex - 15, ey, 30, 20);
 
-                // Flame
-                const flameLen = 10 + Math.random() * 20;
-                const gradient = ctx.createLinearGradient(pos.x + 30, pos.y, pos.x + 30 + flameLen, pos.y);
-                gradient.addColorStop(0, '#fff');
-                gradient.addColorStop(0.3, '#ff0');
-                gradient.addColorStop(0.6, '#f80');
-                gradient.addColorStop(1, 'transparent');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(pos.x + 30, pos.y + 3, flameLen, 14);
+                    // Pulsing weak point indicator
+                    const pulse = Math.sin(frame * 0.1) * 0.3 + 0.7;
+                    ctx.strokeStyle = `rgba(255, 150, 0, ${pulse})`;
+                    ctx.shadowColor = '#f80';
+                    ctx.shadowBlur = 10;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(ex - 18, ey - 3, 36, 26);
+                    ctx.shadowBlur = 0;
+
+                    // Flame
+                    const flameLen = 15 + Math.random() * 25;
+                    const gradient = ctx.createLinearGradient(ex + 15, ey, ex + 15 + flameLen, ey);
+                    gradient.addColorStop(0, '#fff');
+                    gradient.addColorStop(0.3, '#ff0');
+                    gradient.addColorStop(0.6, '#f80');
+                    gradient.addColorStop(1, 'transparent');
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(ex + 15, ey + 3, flameLen, 14);
+
+                    // Engine health bar
+                    const healthPct = eng.health / eng.maxHealth;
+                    ctx.fillStyle = '#300';
+                    ctx.fillRect(ex - 15, ey - 8, 30, 4);
+                    ctx.fillStyle = healthPct > 0.5 ? '#0f0' : healthPct > 0.25 ? '#ff0' : '#f00';
+                    ctx.fillRect(ex - 15, ey - 8, 30 * healthPct, 4);
+                }
             });
 
-            // Turrets with neon
-            b.turrets.forEach(t => {
-                ctx.fillStyle = '#333';
-                ctx.beginPath();
-                ctx.arc(b.x + t.x, b.y + t.y, 15, 0, Math.PI * 2);
-                ctx.fill();
+            // Draw core (when exposed)
+            if (b.core.exposed) {
+                const cx = b.x + b.core.x;
+                const cy = b.y + b.core.y;
 
-                ctx.fillStyle = b.enraged ? '#f00' : '#f0f';
-                ctx.shadowColor = b.enraged ? '#f00' : '#f0f';
-                ctx.shadowBlur = 10;
-                ctx.beginPath();
-                ctx.arc(b.x + t.x, b.y + t.y, 6, 0, Math.PI * 2);
-                ctx.fill();
+                // Pulsing critical weak point
+                const corePulse = Math.sin(frame * 0.2) * 0.4 + 0.6;
+                ctx.fillStyle = `rgba(255, 0, 0, ${corePulse * 0.5})`;
+                ctx.shadowColor = '#f00';
+                ctx.shadowBlur = 30;
+                ctx.fillRect(cx, cy, b.core.width, b.core.height);
+
+                // Core border
+                ctx.strokeStyle = '#f00';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(cx, cy, b.core.width, b.core.height);
+
+                // "WEAK POINT" indicator
+                ctx.fillStyle = '#f00';
+                ctx.font = '8px "Press Start 2P"';
+                ctx.textAlign = 'center';
+                ctx.fillText('WEAK', cx + b.core.width/2, cy - 5);
                 ctx.shadowBlur = 0;
+            }
+
+            // Draw turrets (with individual health)
+            b.turrets.forEach(t => {
+                const tx = b.x + t.x;
+                const ty = b.y + t.y;
+
+                if (!t.alive) {
+                    // Destroyed turret - wreckage
+                    ctx.fillStyle = '#222';
+                    ctx.beginPath();
+                    ctx.arc(tx, ty, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Smoke
+                    if (frame % 8 === 0) {
+                        particles.push({
+                            x: tx, y: ty, vx: Math.random() - 0.5, vy: -2,
+                            life: 25, color: '#444', size: 6
+                        });
+                    }
+                } else {
+                    // Active turret
+                    ctx.fillStyle = '#333';
+                    ctx.beginPath();
+                    ctx.arc(tx, ty, 18, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Turret glow based on phase
+                    const turretColor = b.currentPhase === 3 ? '#f00' : b.currentPhase === 2 ? '#f80' : '#f0f';
+                    ctx.fillStyle = turretColor;
+                    ctx.shadowColor = turretColor;
+                    ctx.shadowBlur = 12;
+                    ctx.beginPath();
+                    ctx.arc(tx, ty, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    // Turret health bar
+                    const healthPct = t.health / t.maxHealth;
+                    ctx.fillStyle = '#300';
+                    ctx.fillRect(tx - 15, ty - 25, 30, 4);
+                    ctx.fillStyle = healthPct > 0.5 ? '#0f0' : healthPct > 0.25 ? '#ff0' : '#f00';
+                    ctx.fillRect(tx - 15, ty - 25, 30 * healthPct, 4);
+                }
             });
 
-            // Damage smoke
-            if (b.health < b.maxHealth * 0.5) {
-                if (frame % 5 === 0) {
+            // Phase 2+ damage smoke
+            if (b.currentPhase >= 2) {
+                if (frame % 4 === 0) {
                     particles.push({
                         x: b.x + Math.random() * b.width,
                         y: b.y + Math.random() * b.height,
                         vx: -2 + Math.random(), vy: -3 - Math.random() * 2,
-                        life: 50,
-                        color: '#333',
-                        size: 12 + Math.random() * 8
+                        life: 50, color: '#333', size: 12 + Math.random() * 8
                     });
                 }
             }
 
-            // Fire if critical
-            if (b.health < b.maxHealth * 0.25) {
-                if (frame % 3 === 0) {
+            // Phase 3 fire effects
+            if (b.currentPhase === 3) {
+                if (frame % 2 === 0) {
                     particles.push({
                         x: b.x + 30 + Math.random() * (b.width - 60),
                         y: b.y + Math.random() * b.height,
-                        vx: Math.random() - 0.5, vy: -2,
-                        life: 30,
+                        vx: Math.random() - 0.5, vy: -3,
+                        life: 25,
                         color: ['#f00', '#f80', '#ff0'][Math.floor(Math.random() * 3)],
-                        size: 8 + Math.random() * 6
+                        size: 10 + Math.random() * 8
                     });
                 }
+            }
+
+            // Laser sweep (Cyber Fortress special)
+            if (b.laserSweep && b.laserSweep.active) {
+                ctx.strokeStyle = '#f00';
+                ctx.shadowColor = '#f00';
+                ctx.shadowBlur = 20;
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.moveTo(b.x + 30, b.laserSweep.y);
+                ctx.lineTo(0, b.laserSweep.y);
+                ctx.stroke();
+
+                // Warning line
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+                ctx.lineWidth = 20;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
             }
 
             ctx.restore();
 
-            // Health bar update
+            // Update phase indicator in health bar
+            const phaseText = `PHASE ${b.currentPhase}`;
+            document.getElementById('bossName').textContent = `★ ${b.name} - ${phaseText} ★`;
+
+            // Health bar update with phase colors
             const healthPercent = b.health / b.maxHealth * 100;
-            document.getElementById('bossHealthBar').style.width = healthPercent + '%';
+            const hpBar = document.getElementById('bossHealthBar');
+            hpBar.style.width = healthPercent + '%';
+            hpBar.style.background = b.currentPhase === 3 ? 'linear-gradient(90deg, #f00, #ff0, #f00)' :
+                                     b.currentPhase === 2 ? 'linear-gradient(90deg, #f80, #ff0, #f80)' :
+                                     'linear-gradient(90deg, #0f0, #ff0, #0f0)';
         }
 
         function createExplosion(x, y, large = false) {
@@ -1538,14 +2165,31 @@
                 const bulletY = player.y + player.height / 2 - 3;
                 const damage = 1 + perks.damage * 0.25;
 
-                if (activePowerups.spread > 0 || currentWeapon === 'spread') {
+                if (currentWeapon === 'laser') {
+                    // Laser weapon - activate laser beam
+                    if (laserCharge >= 10 && !laserActive) {
+                        laserActive = true;
+                        playSound('laser');
+                    }
+                    player.lastShot = Date.now();
+                } else if (currentWeapon === 'rocket') {
+                    // Rocket weapon - fire homing rockets
+                    if (rocketAmmo > 0) {
+                        fireRocket();
+                        player.lastShot = Date.now();
+                    }
+                } else if (activePowerups.spread > 0 || currentWeapon === 'spread') {
+                    // Spread weapon
                     for (let i = -2; i <= 2; i++) {
                         player.bullets.push({
                             x: player.x + player.width, y: bulletY + i * 12,
                             width: 18, height: 5, speed: 14, vy: i * 1.5, damage
                         });
                     }
+                    player.lastShot = Date.now();
+                    playSound('shoot');
                 } else {
+                    // Normal weapon
                     player.bullets.push({
                         x: player.x + player.width, y: bulletY,
                         width: 20, height: 6, speed: 14, vy: 0, damage
@@ -1561,9 +2205,9 @@
                             width: 20, height: 6, speed: 14, vy: 1, damage
                         });
                     }
+                    player.lastShot = Date.now();
+                    playSound('shoot');
                 }
-                player.lastShot = Date.now();
-                playSound('shoot');
             }
 
             // Laser weapon
@@ -1592,6 +2236,18 @@
             player.bullets = player.bullets.filter(b => {
                 b.x += b.speed * speedMod;
                 b.y += (b.vy || 0) * speedMod;
+
+                // Check mine collision
+                for (let i = mines.length - 1; i >= 0; i--) {
+                    const m = mines[i];
+                    if (Math.hypot(b.x - m.x, b.y - m.y) < m.radius + 5) {
+                        createExplosion(m.x, m.y, true);
+                        mines.splice(i, 1);
+                        score += 50;
+                        return false;
+                    }
+                }
+
                 return b.x < canvas.width + 20 && b.y > -20 && b.y < canvas.height + 20;
             });
 
@@ -1626,6 +2282,22 @@
                     createExplosion(r.x, r.y, false);
                     return false;
                 }
+                // Hit mini-boss
+                if (miniBoss && !miniBoss.cloaked && checkCollision(r, miniBoss)) {
+                    miniBoss.health -= 5;
+                    createExplosion(r.x, r.y, false);
+                    return false;
+                }
+                // Hit mines
+                for (let i = mines.length - 1; i >= 0; i--) {
+                    const m = mines[i];
+                    if (Math.hypot(r.x - m.x, r.y - m.y) < m.radius + 10) {
+                        createExplosion(m.x, m.y, true);
+                        mines.splice(i, 1);
+                        score += 50;
+                        return false;
+                    }
+                }
 
                 return r.x > -20 && r.x < canvas.width + 50 && r.y > -50 && r.y < canvas.height + 50;
             });
@@ -1649,15 +2321,8 @@
             if (boss) {
                 const b = boss;
 
-                // Enrage at low health
-                if (!b.enraged && b.health < b.maxHealth * 0.3) {
-                    b.enraged = true;
-                    playSound('boss');
-                    floatingTexts.push({
-                        x: b.x + b.width/2, y: b.y - 30,
-                        text: 'ENRAGED!', color: '#f00', life: 90, size: 20
-                    });
-                }
+                // Update boss phase system
+                updateBossPhase();
 
                 // Move to position
                 if (b.x > canvas.width - b.width - 60) {
@@ -1669,50 +2334,85 @@
                         b.phaseTimer = 0;
                     }
 
-                    // Movement patterns based on boss type
-                    const moveSpeed = (b.enraged ? 3 : 2) * speedMod;
-                    if (b.type === 0) { // Mega Bomber - sine wave
-                        b.y += Math.sin(frame * 0.02) * moveSpeed;
-                    } else if (b.type === 1) { // Cyber Fortress - tracking
-                        b.y += (player.y - b.y - b.height/2 + player.height/2) * 0.02 * speedMod;
-                    } else { // Death Machine - aggressive
-                        if (b.phase === 0) b.y += Math.sin(frame * 0.03) * moveSpeed * 1.5;
-                        else b.y += (player.y - b.y - b.height/2) * 0.03 * speedMod;
+                    // Movement patterns based on boss type AND current phase
+                    const phaseSpeedMult = b.currentPhase === 3 ? 1.5 : b.currentPhase === 2 ? 1.2 : 1;
+                    const moveSpeed = b.speed * 2 * phaseSpeedMult * speedMod;
+
+                    if (b.type === 0) { // Mega Bomber - sine wave, faster in later phases
+                        b.y += Math.sin(frame * (0.02 * phaseSpeedMult)) * moveSpeed;
+                    } else if (b.type === 1) { // Cyber Fortress - tracking, more aggressive
+                        const trackSpeed = b.currentPhase === 3 ? 0.04 : b.currentPhase === 2 ? 0.03 : 0.02;
+                        b.y += (player.y - b.y - b.height/2 + player.height/2) * trackSpeed * speedMod;
+                    } else { // Death Machine - aggressive patterns
+                        if (b.currentPhase === 3) {
+                            // Erratic movement in phase 3
+                            b.y += Math.sin(frame * 0.05) * moveSpeed * 2;
+                            b.y += Math.cos(frame * 0.03) * moveSpeed;
+                        } else if (b.currentPhase === 2) {
+                            b.y += (player.y - b.y - b.height/2) * 0.035 * speedMod;
+                        } else {
+                            b.y += Math.sin(frame * 0.03) * moveSpeed;
+                        }
                     }
 
                     b.y = Math.max(40, Math.min(canvas.height - b.height - 90, b.y));
 
-                    // Turret shooting
-                    const shootInterval = b.enraged ? 30 : 50;
+                    // Turret shooting (only alive turrets)
+                    const baseInterval = b.currentPhase === 3 ? 20 : b.currentPhase === 2 ? 35 : 50;
                     b.turrets.forEach(t => {
-                        if (frame - t.lastShot > shootInterval) {
+                        if (!t.alive) return;
+                        const interval = t.fireRate ? baseInterval * t.fireRate : baseInterval;
+                        if (frame - t.lastShot > interval) {
                             const angle = Math.atan2(player.y + player.height/2 - (b.y + t.y), player.x - (b.x + t.x));
+                            const bulletSpeed = b.currentPhase === 3 ? 8 : b.currentPhase === 2 ? 6 : 5;
                             b.bullets.push({
                                 x: b.x + t.x, y: b.y + t.y,
-                                width: 12, height: 12, speed: b.enraged ? 7 : 5, angle
+                                width: 12, height: 12, speed: bulletSpeed, angle
                             });
 
-                            // Extra bullets when enraged
-                            if (b.enraged && b.type === 2) {
-                                b.bullets.push({ x: b.x + t.x, y: b.y + t.y, width: 12, height: 12, speed: 6, angle: angle + 0.2 });
-                                b.bullets.push({ x: b.x + t.x, y: b.y + t.y, width: 12, height: 12, speed: 6, angle: angle - 0.2 });
+                            // Extra bullets in phase 2+
+                            if (b.currentPhase >= 2) {
+                                b.bullets.push({ x: b.x + t.x, y: b.y + t.y, width: 10, height: 10, speed: bulletSpeed - 1, angle: angle + 0.15 });
+                                b.bullets.push({ x: b.x + t.x, y: b.y + t.y, width: 10, height: 10, speed: bulletSpeed - 1, angle: angle - 0.15 });
+                            }
+                            // Even more in phase 3
+                            if (b.currentPhase === 3 && b.type === 2) {
+                                b.bullets.push({ x: b.x + t.x, y: b.y + t.y, width: 8, height: 8, speed: bulletSpeed, angle: angle + 0.3 });
+                                b.bullets.push({ x: b.x + t.x, y: b.y + t.y, width: 8, height: 8, speed: bulletSpeed, angle: angle - 0.3 });
                             }
                             t.lastShot = frame;
                         }
                     });
 
-                    // Special attacks
-                    if (b.type === 1 && b.phase === 2 && frame % 60 === 0) {
-                        // Laser sweep
-                        for (let i = 0; i < 10; i++) {
-                            setTimeout(() => {
-                                if (boss) {
-                                    b.bullets.push({
-                                        x: b.x + 30, y: b.y + b.height/2 + (i - 5) * 15,
-                                        width: 30, height: 4, speed: 10, angle: Math.PI
-                                    });
-                                }
-                            }, i * 50);
+                    // Special attacks (phase 3 only)
+                    b.specialAttackTimer++;
+                    if (b.currentPhase === 3 && b.specialAttackTimer > 180) {
+                        bossSpecialAttack();
+                        b.specialAttackTimer = 0;
+                    }
+
+                    // Laser sweep update (Cyber Fortress)
+                    if (b.laserSweep && b.laserSweep.active) {
+                        b.laserSweep.y += b.laserSweep.direction * 3;
+                        b.laserSweep.timer--;
+
+                        // Damage player if in laser path
+                        if (player.invincible === 0 && activePowerups.shield === 0 &&
+                            Math.abs(player.y + player.height/2 - b.laserSweep.y) < 15 &&
+                            player.x < b.x + 30) {
+                            lives--;
+                            player.invincible = 90;
+                            createExplosion(player.x + player.width/2, player.y + player.height/2);
+                            updateUI();
+                            if (lives <= 0) gameOver();
+                        }
+
+                        // Reverse or end
+                        if (b.laserSweep.y < b.y + 30 || b.laserSweep.y > b.y + b.height - 30) {
+                            b.laserSweep.direction *= -1;
+                        }
+                        if (b.laserSweep.timer <= 0) {
+                            b.laserSweep.active = false;
                         }
                     }
                 }
@@ -1721,6 +2421,19 @@
                 b.bullets = b.bullets.filter(bullet => {
                     bullet.x += Math.cos(bullet.angle) * bullet.speed * speedMod;
                     bullet.y += Math.sin(bullet.angle) * bullet.speed * speedMod;
+
+                    // Bomb bullets explode on ground
+                    if (bullet.isBomb && bullet.y > canvas.height - 100) {
+                        createExplosion(bullet.x, bullet.y, true);
+                        // Area damage to player
+                        if (Math.abs(player.x - bullet.x) < 80 && player.invincible === 0 && activePowerups.shield === 0) {
+                            lives--;
+                            player.invincible = 90;
+                            updateUI();
+                            if (lives <= 0) gameOver();
+                        }
+                        return false;
+                    }
 
                     if (player.invincible === 0 && activePowerups.shield === 0 && checkCollision(bullet, player)) {
                         lives--;
@@ -1734,20 +2447,21 @@
                     return bullet.x > -30 && bullet.x < canvas.width + 30 && bullet.y > -30 && bullet.y < canvas.height + 30;
                 });
 
-                // Player bullets hitting boss
+                // Player bullets hitting boss components
                 player.bullets = player.bullets.filter(bullet => {
-                    if (checkCollision(bullet, b)) {
-                        b.health -= bullet.damage || 1;
+                    if (hitBossComponent(bullet)) {
                         playSound('hit');
                         createExplosion(bullet.x, bullet.y, false);
+                        updateBossPhase();
 
                         if (b.health <= 0) {
                             // EPIC BOSS DEFEAT
+                            stopBossMusic();
                             const bossScore = 10000 * level;
                             score += bossScore;
 
                             // Multiple explosions
-                            for (let i = 0; i < 8; i++) {
+                            for (let i = 0; i < 12; i++) {
                                 setTimeout(() => {
                                     if (!boss) return;
                                     createExplosion(
@@ -1755,19 +2469,20 @@
                                         b.y + Math.random() * b.height,
                                         true
                                     );
-                                }, i * 150);
+                                }, i * 120);
                             }
 
-                            screenShake = 50;
-                            shockwaves.push({ x: b.x + b.width/2, y: b.y + b.height/2, radius: 0, maxRadius: 400, speed: 10, color: '#ff0' });
-                            spawnDebris(b.x + b.width/2, b.y + b.height/2, 20);
+                            screenShake = 60;
+                            shockwaves.push({ x: b.x + b.width/2, y: b.y + b.height/2, radius: 0, maxRadius: 500, speed: 12, color: '#ff0' });
+                            spawnDebris(b.x + b.width/2, b.y + b.height/2, 30);
                             playSound('megaExplosion');
                             triggerSlowMotion();
+                            playVoice('GODLIKE');
 
                             floatingTexts.push({
                                 x: b.x + b.width/2, y: b.y + b.height/2,
                                 text: '★ BOSS DESTROYED! +' + bossScore + ' ★',
-                                color: '#ff0', life: 150, size: 24
+                                color: '#ff0', life: 180, size: 28
                             });
 
                             setTimeout(() => {
@@ -1789,7 +2504,132 @@
                                 if (cfg.bossRush) {
                                     setTimeout(() => spawnBoss(), 2000);
                                 }
-                            }, 1200);
+                            }, 1500);
+                        }
+                        return false;
+                    }
+                    return true;
+                });
+            }
+
+            // Update mines
+            mines = mines.filter(mine => {
+                mine.timer--;
+                mine.pulse = (mine.pulse + 0.1) % (Math.PI * 2);
+                mine.armed = mine.timer < 270; // Armed after 0.5 sec
+
+                // Check player collision
+                if (mine.armed && player.invincible === 0 && activePowerups.shield === 0) {
+                    const dist = Math.hypot(player.x + player.width/2 - mine.x, player.y + player.height/2 - mine.y);
+                    if (dist < mine.radius + 20) {
+                        lives--;
+                        player.invincible = 90;
+                        createExplosion(mine.x, mine.y, true);
+                        updateUI();
+                        if (lives <= 0) gameOver();
+                        return false;
+                    }
+                }
+
+                // Expire
+                if (mine.timer <= 0) {
+                    createExplosion(mine.x, mine.y, false);
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Update mini-boss
+            if (miniBoss) {
+                const mb = miniBoss;
+
+                // Move into position
+                if (mb.x > canvas.width - mb.width - 80) {
+                    mb.x -= mb.speed * 2 * speedMod;
+                } else {
+                    // Movement
+                    mb.y += Math.sin(frame * 0.03) * 2 * speedMod;
+                    mb.y = Math.max(80, Math.min(canvas.height - mb.height - 100, mb.y));
+
+                    // Stealth Hunter cloaking
+                    if (mb.cloakDuration > 0) {
+                        mb.cloakTimer++;
+                        if (mb.cloakTimer > 120 && !mb.cloaked) {
+                            mb.cloaked = true;
+                            mb.cloakTimer = 0;
+                        } else if (mb.cloaked && mb.cloakTimer > mb.cloakDuration) {
+                            mb.cloaked = false;
+                            mb.cloakTimer = 0;
+                        }
+                    }
+
+                    // Shooting
+                    if (frame - mb.lastShot > mb.shootCooldown && !mb.cloaked) {
+                        const angle = Math.atan2(player.y + player.height/2 - (mb.y + mb.height/2), player.x - mb.x);
+
+                        if (mb.bombRate > 0 && frame % mb.bombRate === 0) {
+                            // Heavy Bomber drops bombs
+                            mb.bullets.push({
+                                x: mb.x + mb.width/2, y: mb.y + mb.height,
+                                width: 14, height: 14, speed: 3, angle: Math.PI/2, isBomb: true
+                            });
+                        } else {
+                            mb.bullets.push({
+                                x: mb.x, y: mb.y + mb.height/2,
+                                width: 10, height: 10, speed: 7, angle
+                            });
+                        }
+                        mb.lastShot = frame;
+                    }
+                }
+
+                // Update mini-boss bullets
+                mb.bullets = mb.bullets.filter(bullet => {
+                    bullet.x += Math.cos(bullet.angle) * bullet.speed * speedMod;
+                    bullet.y += Math.sin(bullet.angle) * bullet.speed * speedMod;
+
+                    if (bullet.isBomb && bullet.y > canvas.height - 100) {
+                        createExplosion(bullet.x, bullet.y, true);
+                        if (Math.abs(player.x - bullet.x) < 60 && player.invincible === 0 && activePowerups.shield === 0) {
+                            lives--; player.invincible = 90; updateUI();
+                            if (lives <= 0) gameOver();
+                        }
+                        return false;
+                    }
+
+                    if (player.invincible === 0 && activePowerups.shield === 0 && checkCollision(bullet, player)) {
+                        lives--; player.invincible = 90;
+                        createExplosion(player.x + player.width/2, player.y + player.height/2);
+                        updateUI();
+                        if (lives <= 0) gameOver();
+                        return false;
+                    }
+                    return bullet.x > -30 && bullet.y < canvas.height + 30;
+                });
+
+                // Player bullets hitting mini-boss
+                player.bullets = player.bullets.filter(bullet => {
+                    if (!mb.cloaked && checkCollision(bullet, mb)) {
+                        mb.health -= bullet.damage || 1;
+                        playSound('hit');
+                        createExplosion(bullet.x, bullet.y, false);
+
+                        if (mb.health <= 0) {
+                            const mbScore = 2000 * level;
+                            score += mbScore;
+                            screenShake = 25;
+                            createExplosion(mb.x + mb.width/2, mb.y + mb.height/2, true);
+                            spawnDebris(mb.x + mb.width/2, mb.y + mb.height/2, 10);
+                            playSound('megaExplosion');
+                            floatingTexts.push({
+                                x: mb.x + mb.width/2, y: mb.y,
+                                text: '★ MINI-BOSS DOWN! +' + mbScore + ' ★',
+                                color: '#f80', life: 100, size: 16
+                            });
+                            spawnPowerup(mb.x + mb.width/2, mb.y + mb.height/2);
+                            miniBoss = null;
+                            updateUI();
                         }
                         return false;
                     }
@@ -1799,45 +2639,114 @@
 
             // Update enemies
             enemies = enemies.filter(enemy => {
-                if (enemy.type !== 'turret') {
-                    enemy.x -= enemy.speed * speedMod;
-                } else {
+                // Base movement
+                if (enemy.type === 'turret') {
                     enemy.x -= 1 * speedMod;
+                } else if (enemy.type === 'kamikaze') {
+                    // Chase player aggressively
+                    const dx = player.x - enemy.x;
+                    const dy = player.y + player.height/2 - (enemy.y + enemy.height/2);
+                    const dist = Math.hypot(dx, dy);
+                    enemy.x += (dx / dist) * enemy.speed * speedMod * 0.7;
+                    enemy.y += (dy / dist) * enemy.speed * speedMod;
+                    // Trail effect
+                    if (frame % 3 === 0) {
+                        particles.push({
+                            x: enemy.x + enemy.width, y: enemy.y + enemy.height/2,
+                            vx: 2 + Math.random(), vy: (Math.random() - 0.5) * 2,
+                            life: 20, color: '#f80', size: 6
+                        });
+                    }
+                } else if (enemy.type === 'blinker') {
+                    enemy.x -= enemy.speed * speedMod;
+                    enemy.teleportTimer--;
+                    // Teleport warning
+                    if (enemy.teleportTimer < 30) {
+                        enemy.teleportWarning = 30 - enemy.teleportTimer;
+                    }
+                    // Teleport!
+                    if (enemy.teleportTimer <= 0) {
+                        // Glitch effect at old position
+                        for (let i = 0; i < 8; i++) {
+                            particles.push({
+                                x: enemy.x + enemy.width/2, y: enemy.y + enemy.height/2,
+                                vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10,
+                                life: 20, color: '#0ff', size: 4
+                            });
+                        }
+                        // New position
+                        enemy.x = canvas.width - 100 - Math.random() * 200;
+                        enemy.y = 100 + Math.random() * (canvas.height - 300);
+                        enemy.teleportTimer = 150 + Math.random() * 60;
+                        enemy.teleportWarning = 0;
+                        // Shoot after teleport
+                        const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                        enemy.bullets.push({ x: enemy.x, y: enemy.y + enemy.height/2, width: 8, height: 8, speed: 8, angle });
+                    }
+                } else if (enemy.type === 'scout') {
+                    enemy.x -= enemy.speed * speedMod;
+                    // Dodge bullets!
+                    if (enemy.dodgeCooldown <= 0) {
+                        for (let b of player.bullets) {
+                            const dist = Math.hypot(b.x - enemy.x, b.y - (enemy.y + enemy.height/2));
+                            if (dist < 80 && b.x < enemy.x) {
+                                // Dodge up or down
+                                enemy.y += (enemy.y > canvas.height/2 ? -60 : 60);
+                                enemy.dodgeCooldown = 30;
+                                // After image
+                                enemy.afterImages.push({ x: enemy.x, y: enemy.y + (enemy.y > canvas.height/2 ? 60 : -60), alpha: 0.7 });
+                                break;
+                            }
+                        }
+                    } else {
+                        enemy.dodgeCooldown--;
+                    }
+                    // Update after images
+                    enemy.afterImages = enemy.afterImages.filter(ai => { ai.alpha -= 0.1; return ai.alpha > 0; });
+                } else if (enemy.type === 'miner') {
+                    enemy.x -= enemy.speed * speedMod;
+                    enemy.mineTimer--;
+                    if (enemy.mineTimer <= 0 && enemy.x < canvas.width - 50) {
+                        spawnMine(enemy.x + enemy.width, enemy.y + enemy.height/2);
+                        enemy.mineTimer = 90;
+                    }
+                } else if (enemy.type === 'shielder') {
+                    enemy.x -= enemy.speed * speedMod;
+                    enemy.y += Math.sin(frame * 0.02) * 1.5 * speedMod;
+                } else {
+                    enemy.x -= enemy.speed * speedMod;
                 }
 
-                // Movement patterns
+                // Standard movement patterns for basic enemies
                 if (enemy.type === 'fighter') {
                     enemy.y = enemy.startY + Math.sin(frame * enemy.frequency) * enemy.amplitude;
                 } else if (enemy.type === 'helicopter' || enemy.type === 'drone') {
                     enemy.y += (player.y - enemy.y) * 0.015 * speedMod;
                 } else if (enemy.type === 'jet') {
-                    // Fast diagonal sweep
                     enemy.y += Math.cos(frame * 0.05) * 3 * speedMod;
                 }
 
-                // Enemy shooting
-                if (Date.now() - enemy.lastShot > enemy.shootCooldown && enemy.x < canvas.width - 80) {
-                    if (enemy.type === 'turret') {
-                        const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
-                        enemy.bullets.push({
-                            x: enemy.x + enemy.width/2, y: enemy.y,
-                            width: 8, height: 8, speed: 7, angle
-                        });
-                    } else if (enemy.type === 'bomber') {
-                        // Spread shot
-                        for (let i = -1; i <= 1; i++) {
-                            enemy.bullets.push({
-                                x: enemy.x, y: enemy.y + enemy.height/2,
-                                width: 10, height: 6, speed: 6, angle: Math.PI + i * 0.3
-                            });
+                // Keep in bounds
+                enemy.y = Math.max(70, Math.min(canvas.height - enemy.height - 90, enemy.y));
+
+                // Enemy shooting (not for kamikaze, miner, scout)
+                if (!['kamikaze', 'miner', 'scout'].includes(enemy.type)) {
+                    if (Date.now() - enemy.lastShot > enemy.shootCooldown && enemy.x < canvas.width - 80) {
+                        if (enemy.type === 'turret') {
+                            const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                            enemy.bullets.push({ x: enemy.x + enemy.width/2, y: enemy.y, width: 8, height: 8, speed: 7, angle });
+                        } else if (enemy.type === 'bomber') {
+                            for (let i = -1; i <= 1; i++) {
+                                enemy.bullets.push({ x: enemy.x, y: enemy.y + enemy.height/2, width: 10, height: 6, speed: 6, angle: Math.PI + i * 0.3 });
+                            }
+                        } else if (enemy.type === 'shielder') {
+                            const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                            enemy.bullets.push({ x: enemy.x, y: enemy.y + enemy.height/2, width: 12, height: 8, speed: 5, angle });
+                        } else {
+                            enemy.bullets.push({ x: enemy.x, y: enemy.y + enemy.height/2, width: 10, height: 4, speed: 8, angle: Math.PI });
                         }
-                    } else {
-                        enemy.bullets.push({
-                            x: enemy.x, y: enemy.y + enemy.height/2,
-                            width: 10, height: 4, speed: 8, angle: Math.PI
-                        });
+                        enemy.lastShot = Date.now();
                     }
-                    enemy.lastShot = Date.now();
                 }
 
                 // Update enemy bullets
@@ -1856,11 +2765,21 @@
                     return bullet.x > -30 && bullet.y > -30 && bullet.y < canvas.height + 30;
                 });
 
-                // Collision with player
+                // Collision with player (kamikaze explodes!)
                 if (player.invincible === 0 && activePowerups.shield === 0 && checkCollision(enemy, player)) {
                     lives--;
                     player.invincible = 90;
-                    createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, true);
+                    const isKamikaze = enemy.type === 'kamikaze';
+                    createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, isKamikaze);
+                    if (isKamikaze) {
+                        screenShake = 20;
+                        // Chain reaction - damage nearby enemies
+                        enemies.forEach(e => {
+                            if (e !== enemy && Math.hypot(e.x - enemy.x, e.y - enemy.y) < 80) {
+                                e.health -= 2;
+                            }
+                        });
+                    }
                     updateUI();
                     if (lives <= 0) gameOver();
                     return false;
@@ -1868,8 +2787,32 @@
 
                 // Hit by player bullet
                 for (let i = player.bullets.length - 1; i >= 0; i--) {
-                    if (checkCollision(player.bullets[i], enemy)) {
-                        const bullet = player.bullets.splice(i, 1)[0];
+                    const bullet = player.bullets[i];
+
+                    // Shielder: check if bullet hits from front (blocked by shield)
+                    if (enemy.type === 'shielder' && enemy.shieldHP > 0) {
+                        if (bullet.x > enemy.x - 10 && bullet.x < enemy.x + 20 && checkCollision(bullet, enemy)) {
+                            // Hit shield
+                            enemy.shieldHP -= bullet.damage || 1;
+                            player.bullets.splice(i, 1);
+                            playSound('hit');
+                            // Shield spark effect
+                            for (let j = 0; j < 5; j++) {
+                                particles.push({
+                                    x: enemy.x, y: enemy.y + enemy.height/2,
+                                    vx: -3 - Math.random() * 3, vy: (Math.random() - 0.5) * 6,
+                                    life: 15, color: '#0af', size: 4
+                                });
+                            }
+                            if (enemy.shieldHP <= 0) {
+                                floatingTexts.push({ x: enemy.x, y: enemy.y - 10, text: 'SHIELD DOWN!', color: '#0ff', life: 40, size: 10 });
+                            }
+                            continue;
+                        }
+                    }
+
+                    if (checkCollision(bullet, enemy)) {
+                        player.bullets.splice(i, 1);
                         enemy.health -= bullet.damage || 1;
 
                         if (enemy.health <= 0) {
@@ -1877,8 +2820,20 @@
                             score += pts;
                             addCombo();
                             updateUI();
+                            const isKamikaze = enemy.type === 'kamikaze';
                             createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, true);
                             spawnDebris(enemy.x + enemy.width/2, enemy.y + enemy.height/2, 3);
+
+                            // Kamikaze chain reaction
+                            if (isKamikaze) {
+                                screenShake = 15;
+                                enemies.forEach(e => {
+                                    if (e !== enemy && Math.hypot(e.x - enemy.x, e.y - enemy.y) < 80) {
+                                        e.health -= 2;
+                                        createExplosion(e.x + e.width/2, e.y + e.height/2, false);
+                                    }
+                                });
+                            }
 
                             floatingTexts.push({
                                 x: enemy.x + enemy.width/2, y: enemy.y,
@@ -2332,6 +3287,63 @@
                     ctx.fillRect(enemy.x, enemy.y - 10, enemy.width * (enemy.health / enemy.maxHealth), 5);
                 }
 
+                // Special visual effects for new enemy types
+                if (enemy.type === 'kamikaze') {
+                    // Flashing red warning glow
+                    if (frame % 8 < 4) {
+                        ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
+                        ctx.shadowColor = '#f00';
+                        ctx.shadowBlur = 20;
+                        ctx.beginPath();
+                        ctx.arc(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width * 0.7, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+                } else if (enemy.type === 'blinker' && enemy.teleportWarning > 0) {
+                    // Glitch/teleport warning effect
+                    const glitchIntensity = enemy.teleportWarning / 30;
+                    ctx.strokeStyle = '#0ff';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = '#0ff';
+                    ctx.shadowBlur = 15 * glitchIntensity;
+                    for (let i = 0; i < 3; i++) {
+                        const offsetX = (Math.random() - 0.5) * 10 * glitchIntensity;
+                        const offsetY = (Math.random() - 0.5) * 10 * glitchIntensity;
+                        ctx.strokeRect(enemy.x + offsetX, enemy.y + offsetY, enemy.width, enemy.height);
+                    }
+                    ctx.shadowBlur = 0;
+                } else if (enemy.type === 'shielder' && enemy.shieldHP > 0) {
+                    // Energy shield in front
+                    const shieldPulse = Math.sin(frame * 0.1) * 0.3 + 0.7;
+                    ctx.strokeStyle = `rgba(0, 150, 255, ${shieldPulse})`;
+                    ctx.lineWidth = 3;
+                    ctx.shadowColor = '#08f';
+                    ctx.shadowBlur = 15;
+                    ctx.beginPath();
+                    ctx.arc(enemy.x + 5, enemy.y + enemy.height/2, enemy.height * 0.6, -Math.PI/2, Math.PI/2);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                    // Shield HP indicator
+                    ctx.fillStyle = '#08f';
+                    ctx.font = '8px "Press Start 2P"';
+                    ctx.fillText('⛊' + enemy.shieldHP, enemy.x, enemy.y - 15);
+                } else if (enemy.type === 'miner') {
+                    // Green glow effect
+                    ctx.shadowColor = '#0f0';
+                    ctx.shadowBlur = 10;
+                    ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(enemy.x - 2, enemy.y - 2, enemy.width + 4, enemy.height + 4);
+                    ctx.shadowBlur = 0;
+                } else if (enemy.type === 'scout' && enemy.afterImages && enemy.afterImages.length > 0) {
+                    // Draw afterimages
+                    enemy.afterImages.forEach(img => {
+                        ctx.globalAlpha = img.alpha || 0.3;
+                        drawPixelPlane(img.x, img.y, enemy.width, enemy.height, 'scout', false, '#ff0');
+                    });
+                    ctx.globalAlpha = 1;
+                }
+
                 // Enemy bullets
                 enemy.bullets.forEach(b => {
                     ctx.fillStyle = '#f44';
@@ -2354,6 +3366,132 @@
                     ctx.fill();
                 });
                 ctx.shadowBlur = 0;
+            }
+
+            // Mines
+            mines.forEach(m => {
+                const pulse = Math.sin(frame * 0.15 + m.x) * 0.3 + 0.7;
+                ctx.save();
+
+                // Mine body
+                ctx.fillStyle = '#0a0';
+                ctx.shadowColor = '#0f0';
+                ctx.shadowBlur = 10 * pulse;
+                ctx.beginPath();
+                ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner glow
+                ctx.fillStyle = `rgba(0, 255, 0, ${pulse * 0.5})`;
+                ctx.beginPath();
+                ctx.arc(m.x, m.y, m.radius * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Spikes
+                ctx.fillStyle = '#0f0';
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2 + frame * 0.02;
+                    const sx = m.x + Math.cos(angle) * (m.radius + 5);
+                    const sy = m.y + Math.sin(angle) * (m.radius + 5);
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Warning if player is close
+                const distToPlayer = Math.hypot(player.x + player.width/2 - m.x, player.y + player.height/2 - m.y);
+                if (distToPlayer < 100) {
+                    ctx.strokeStyle = '#ff0';
+                    ctx.lineWidth = 2;
+                    ctx.globalAlpha = (100 - distToPlayer) / 100;
+                    ctx.beginPath();
+                    ctx.arc(m.x, m.y, m.radius + 10, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                }
+
+                ctx.restore();
+            });
+
+            // Mini-boss
+            if (miniBoss) {
+                const mb = miniBoss;
+                ctx.save();
+
+                // Cloaking effect
+                if (mb.cloaked) {
+                    ctx.globalAlpha = 0.15 + Math.sin(frame * 0.2) * 0.1;
+                }
+
+                // Main body
+                ctx.fillStyle = mb.color;
+                ctx.shadowColor = mb.color;
+                ctx.shadowBlur = 15;
+                ctx.fillRect(mb.x, mb.y, mb.width, mb.height);
+
+                // Outline
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(mb.x, mb.y, mb.width, mb.height);
+
+                // Cockpit
+                ctx.fillStyle = '#0ff';
+                ctx.shadowColor = '#0ff';
+                ctx.shadowBlur = 8;
+                ctx.fillRect(mb.x + 5, mb.y + mb.height/2 - 10, 15, 20);
+
+                // Engine flames
+                const flameLen = 20 + Math.random() * 15;
+                const gradient = ctx.createLinearGradient(mb.x + mb.width, mb.y + mb.height/2, mb.x + mb.width + flameLen, mb.y + mb.height/2);
+                gradient.addColorStop(0, '#fff');
+                gradient.addColorStop(0.3, '#ff0');
+                gradient.addColorStop(0.6, '#f80');
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(mb.x + mb.width, mb.y + mb.height/2 - 8, flameLen, 16);
+
+                ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1;
+
+                // Health bar
+                ctx.fillStyle = '#300';
+                ctx.fillRect(mb.x, mb.y - 15, mb.width, 8);
+                const healthPct = mb.health / mb.maxHealth;
+                ctx.fillStyle = healthPct > 0.5 ? '#0f0' : healthPct > 0.25 ? '#ff0' : '#f00';
+                ctx.fillRect(mb.x, mb.y - 15, mb.width * healthPct, 8);
+
+                // Name
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px "Press Start 2P"';
+                ctx.textAlign = 'center';
+                ctx.fillText(mb.name, mb.x + mb.width/2, mb.y - 22);
+
+                // Mini-boss bullets
+                mb.bullets.forEach(b => {
+                    if (b.isBomb) {
+                        // Bomb visual
+                        ctx.fillStyle = '#f00';
+                        ctx.shadowColor = '#f00';
+                        ctx.shadowBlur = 10;
+                        ctx.beginPath();
+                        ctx.arc(b.x, b.y, 10, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#ff0';
+                        ctx.beginPath();
+                        ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else {
+                        ctx.fillStyle = '#f0f';
+                        ctx.shadowColor = '#f0f';
+                        ctx.shadowBlur = 8;
+                        ctx.beginPath();
+                        ctx.arc(b.x, b.y, 6, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+                ctx.shadowBlur = 0;
+
+                ctx.restore();
             }
 
             // Floating texts
