@@ -816,78 +816,248 @@
             }
         }
 
-        // Dynamic layered music
+        // ============ BATTLE MUSIC ============
+        // Aggressive E minor battle theme - war drums and synth assault
         let musicBeat = 0;
-        const bassPattern = [1,0,0,1,0,0,1,0, 1,0,0,1,0,1,0,0];
-        const hihatPattern = [1,0,1,0,1,0,1,0, 1,0,1,0,1,1,1,0];
-        const melodyNotes = [262, 294, 330, 392, 440, 494, 523, 587];
-        const melodyPattern = [0,0,2,2,4,4,2,0, 5,5,4,4,2,2,0,0];
+        let battleSection = 0; // 0-3 for different parts
+
+        // E minor: E F# G A B C D E
+        // E2=82, E3=165, E4=330, G4=392, A4=440, B4=494, D5=587, E5=659
+
+        // Driving bass patterns (E minor power)
+        const battleBass = [
+            82, 0, 82, 82, 0, 82, 0, 82,   // E2 driving
+            82, 0, 110, 0, 82, 0, 98, 0,   // E2, A2, G2
+            73, 0, 73, 73, 0, 82, 0, 98,   // D2, E2, G2
+            82, 0, 82, 0, 110, 0, 82, 82   // E2, A2, E2
+        ];
+
+        // Aggressive melody phrases
+        const battleMelody = [
+            // Phrase 1: Attack!
+            [330, 392, 440, 494, 440, 392, 330, 0],
+            // Phrase 2: Rising tension
+            [494, 523, 587, 659, 587, 523, 494, 440],
+            // Phrase 3: Heroic
+            [659, 587, 494, 440, 494, 587, 659, 784],
+            // Phrase 4: Resolution
+            [440, 392, 330, 294, 330, 392, 440, 330]
+        ];
+
+        // Fast arpeggios for intensity
+        const battleArp = [
+            330, 392, 494, 659, 494, 392,  // Em arpeggio up/down
+            294, 392, 494, 587, 494, 392,  // G arpeggio
+            349, 440, 523, 698, 523, 440,  // F arpeggio (tension!)
+            330, 392, 494, 659, 784, 659   // Em high
+        ];
+
+        let battleArpIndex = 0;
+        let battleMelodyIndex = 0;
+        let battleMelodyNote = 0;
+        let scheduledBattleTime = 0;
 
         function playMusicBeat() {
             if (!audioCtx || !musicPlaying) return;
             const now = audioCtx.currentTime;
-            const intensity = musicNodes.intensity;
 
-            // Bass drum
-            if (bassPattern[musicBeat % 16]) {
+            // Dynamic intensity based on combo
+            const intensity = Math.min(1, 0.4 + (typeof combo !== 'undefined' ? combo : 0) * 0.03);
+            musicNodes.intensity = intensity;
+
+            // Change section every 32 beats
+            if (musicBeat % 128 === 0) {
+                battleSection = (battleSection + 1) % 4;
+            }
+
+            // === KICK DRUM - Four on the floor with variations ===
+            if (musicBeat % 4 === 0) {
                 const kick = audioCtx.createOscillator();
                 const kickGain = audioCtx.createGain();
                 kick.connect(kickGain);
                 kickGain.connect(audioCtx.destination);
                 kick.type = 'sine';
-                kick.frequency.setValueAtTime(150, now);
-                kick.frequency.exponentialRampToValueAtTime(30, now + 0.1);
-                kickGain.gain.setValueAtTime(0.15 + intensity * 0.1, now);
-                kickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                kick.frequency.setValueAtTime(120, now);
+                kick.frequency.exponentialRampToValueAtTime(35, now + 0.12);
+                kickGain.gain.setValueAtTime(0.25, now);
+                kickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
                 kick.start(now);
-                kick.stop(now + 0.1);
+                kick.stop(now + 0.15);
+
+                // Layer with click for punch
+                const click = audioCtx.createOscillator();
+                const clickGain = audioCtx.createGain();
+                click.connect(clickGain);
+                clickGain.connect(audioCtx.destination);
+                click.type = 'square';
+                click.frequency.setValueAtTime(1000, now);
+                clickGain.gain.setValueAtTime(0.08, now);
+                clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+                click.start(now);
+                click.stop(now + 0.02);
             }
 
-            // Hi-hat
-            if (hihatPattern[musicBeat % 16] && intensity > 0.3) {
-                const hat = audioCtx.createOscillator();
-                const hatGain = audioCtx.createGain();
-                hat.connect(hatGain);
-                hatGain.connect(audioCtx.destination);
-                hat.type = 'square';
-                hat.frequency.setValueAtTime(800 + Math.random() * 200, now);
-                hatGain.gain.setValueAtTime(0.03 + intensity * 0.02, now);
-                hatGain.gain.exponentialRampToValueAtTime(0.01, now + 0.03);
-                hat.start(now);
-                hat.stop(now + 0.03);
+            // === SNARE on 2 and 4 ===
+            if (musicBeat % 8 === 4) {
+                // Snare body
+                const snare = audioCtx.createOscillator();
+                const snareGain = audioCtx.createGain();
+                snare.connect(snareGain);
+                snareGain.connect(audioCtx.destination);
+                snare.type = 'triangle';
+                snare.frequency.setValueAtTime(200, now);
+                snare.frequency.exponentialRampToValueAtTime(120, now + 0.1);
+                snareGain.gain.setValueAtTime(0.15, now);
+                snareGain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                snare.start(now);
+                snare.stop(now + 0.12);
+
+                // Noise layer
+                const noise = audioCtx.createOscillator();
+                const noiseGain = audioCtx.createGain();
+                noise.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                noise.type = 'sawtooth';
+                noise.frequency.setValueAtTime(400, now);
+                noiseGain.gain.setValueAtTime(0.08, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                noise.start(now);
+                noise.stop(now + 0.08);
             }
 
-            // Melody
-            if (musicBeat % 2 === 0 && intensity > 0.5) {
-                const mel = audioCtx.createOscillator();
-                const melGain = audioCtx.createGain();
-                mel.connect(melGain);
-                melGain.connect(audioCtx.destination);
-                mel.type = 'square';
-                mel.frequency.setValueAtTime(melodyNotes[melodyPattern[musicBeat % 16]], now);
-                melGain.gain.setValueAtTime(0.05 + intensity * 0.03, now);
-                melGain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
-                mel.start(now);
-                mel.stop(now + 0.12);
+            // === HI-HAT - 8th notes with offbeat accent ===
+            const hihatVol = (musicBeat % 2 === 1) ? 0.04 : 0.02;
+            const hat = audioCtx.createOscillator();
+            const hatGain = audioCtx.createGain();
+            hat.connect(hatGain);
+            hatGain.connect(audioCtx.destination);
+            hat.type = 'square';
+            hat.frequency.setValueAtTime(900 + Math.random() * 400, now);
+            hatGain.gain.setValueAtTime(hihatVol, now);
+            hatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+            hat.start(now);
+            hat.stop(now + 0.04);
+
+            // === BASS LINE - Driving synth bass ===
+            const bassNote = battleBass[(musicBeat + battleSection * 8) % battleBass.length];
+            if (bassNote > 0) {
+                // Main bass
+                const bass = audioCtx.createOscillator();
+                const bassGain = audioCtx.createGain();
+                bass.connect(bassGain);
+                bassGain.connect(audioCtx.destination);
+                bass.type = 'sawtooth';
+                bass.frequency.setValueAtTime(bassNote, now);
+                bassGain.gain.setValueAtTime(0.12, now);
+                bassGain.gain.exponentialRampToValueAtTime(0.02, now + 0.1);
+                bass.start(now);
+                bass.stop(now + 0.1);
+
+                // Sub bass layer
+                const sub = audioCtx.createOscillator();
+                const subGain = audioCtx.createGain();
+                sub.connect(subGain);
+                subGain.connect(audioCtx.destination);
+                sub.type = 'sine';
+                sub.frequency.setValueAtTime(bassNote / 2, now);
+                subGain.gain.setValueAtTime(0.1, now);
+                subGain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                sub.start(now);
+                sub.stop(now + 0.12);
             }
 
-            // Arpeggio on high intensity
-            if (intensity > 0.7 && musicBeat % 4 === 0) {
-                [0, 100, 200].forEach((delay, i) => {
-                    setTimeout(() => {
-                        if (!audioCtx) return;
-                        const arp = audioCtx.createOscillator();
-                        const arpGain = audioCtx.createGain();
-                        arp.connect(arpGain);
-                        arpGain.connect(audioCtx.destination);
-                        arp.type = 'sine';
-                        arp.frequency.setValueAtTime(523 * (1 + i * 0.25), audioCtx.currentTime);
-                        arpGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-                        arpGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-                        arp.start();
-                        arp.stop(audioCtx.currentTime + 0.08);
-                    }, delay);
+            // === MELODY - Every 2 beats, synth lead ===
+            if (musicBeat % 4 === 0) {
+                const melodyPhrase = battleMelody[battleSection];
+                const note = melodyPhrase[battleMelodyNote % melodyPhrase.length];
+                battleMelodyNote++;
+
+                if (note > 0) {
+                    // Lead synth with slight detune for thickness
+                    const lead = audioCtx.createOscillator();
+                    const lead2 = audioCtx.createOscillator();
+                    const leadGain = audioCtx.createGain();
+                    lead.connect(leadGain);
+                    lead2.connect(leadGain);
+                    leadGain.connect(audioCtx.destination);
+
+                    lead.type = 'square';
+                    lead2.type = 'square';
+                    lead.frequency.setValueAtTime(note, now);
+                    lead2.frequency.setValueAtTime(note * 1.005, now); // Slight detune
+                    leadGain.gain.setValueAtTime(0.06, now);
+                    leadGain.gain.setValueAtTime(0.08, now + 0.02);
+                    leadGain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+                    lead.start(now);
+                    lead2.start(now);
+                    lead.stop(now + 0.18);
+                    lead2.stop(now + 0.18);
+                }
+            }
+
+            // === ARPEGGIO - Fast 16th notes when intensity high ===
+            if (intensity > 0.5) {
+                const arpNote = battleArp[battleArpIndex % battleArp.length];
+                battleArpIndex++;
+
+                const arp = audioCtx.createOscillator();
+                const arpGain = audioCtx.createGain();
+                arp.connect(arpGain);
+                arpGain.connect(audioCtx.destination);
+                arp.type = 'triangle';
+                arp.frequency.setValueAtTime(arpNote, now);
+                arpGain.gain.setValueAtTime(0.03 * intensity, now);
+                arpGain.gain.exponentialRampToValueAtTime(0.005, now + 0.06);
+                arp.start(now);
+                arp.stop(now + 0.06);
+            }
+
+            // === STAB - Chord stab on section changes ===
+            if (musicBeat % 32 === 0) {
+                // E minor power chord stab
+                [165, 247, 330].forEach((freq, i) => {
+                    const stab = audioCtx.createOscillator();
+                    const stabGain = audioCtx.createGain();
+                    stab.connect(stabGain);
+                    stabGain.connect(audioCtx.destination);
+                    stab.type = 'sawtooth';
+                    stab.frequency.setValueAtTime(freq, now);
+                    stabGain.gain.setValueAtTime(0.08, now);
+                    stabGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    stab.start(now);
+                    stab.stop(now + 0.3);
                 });
+            }
+
+            // === RISER every 64 beats for tension ===
+            if (musicBeat % 64 === 56) {
+                const riser = audioCtx.createOscillator();
+                const riserGain = audioCtx.createGain();
+                riser.connect(riserGain);
+                riserGain.connect(audioCtx.destination);
+                riser.type = 'sawtooth';
+                riser.frequency.setValueAtTime(200, now);
+                riser.frequency.exponentialRampToValueAtTime(800, now + 0.8);
+                riserGain.gain.setValueAtTime(0.05, now);
+                riserGain.gain.setValueAtTime(0.1, now + 0.6);
+                riserGain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+                riser.start(now);
+                riser.stop(now + 0.85);
+            }
+
+            // === CRASH on section change ===
+            if (musicBeat % 128 === 0 && musicBeat > 0) {
+                const crash = audioCtx.createOscillator();
+                const crashGain = audioCtx.createGain();
+                crash.connect(crashGain);
+                crashGain.connect(audioCtx.destination);
+                crash.type = 'sawtooth';
+                crash.frequency.setValueAtTime(600, now);
+                crash.frequency.exponentialRampToValueAtTime(200, now + 0.8);
+                crashGain.gain.setValueAtTime(0.12, now);
+                crashGain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+                crash.start(now);
+                crash.stop(now + 0.9);
             }
 
             musicBeat++;
@@ -897,7 +1067,12 @@
         function toggleMusic() {
             musicPlaying = !musicPlaying;
             if (musicPlaying) {
-                musicInterval = setInterval(playMusicBeat, 125); // 120 BPM
+                initAudio();
+                musicBeat = 0;
+                battleSection = 0;
+                battleArpIndex = 0;
+                battleMelodyNote = 0;
+                musicInterval = setInterval(playMusicBeat, 107); // ~140 BPM - driving tempo
             } else {
                 clearInterval(musicInterval);
             }
@@ -906,6 +1081,7 @@
         // ============ MENU MUSIC ============
         // Epic heroic theme in D minor - a lone pilot facing the unknown
         let menuMusicPlaying = false;
+        let menuMusicGain = null; // Master gain for menu music
         let menuMusicInterval = null;
         let menuBeat = 0;
 
@@ -993,6 +1169,11 @@
             initAudio();
             if (!audioCtx) return;
 
+            // Create master gain for menu music
+            menuMusicGain = audioCtx.createGain();
+            menuMusicGain.connect(audioCtx.destination);
+            menuMusicGain.gain.setValueAtTime(1, audioCtx.currentTime);
+
             menuMusicPlaying = true;
             menuBeat = 0;
             menuNoteIndex = 0;
@@ -1017,7 +1198,7 @@
                         vibrato.connect(vibratoGain);
                         vibratoGain.connect(osc.frequency);
                         osc.connect(gain);
-                        gain.connect(audioCtx.destination);
+                        gain.connect(menuMusicGain);
 
                         osc.type = 'square';
                         osc.frequency.setValueAtTime(noteData.note, menuScheduledTime);
@@ -1038,7 +1219,7 @@
                             const pad = audioCtx.createOscillator();
                             const padGain = audioCtx.createGain();
                             pad.connect(padGain);
-                            padGain.connect(audioCtx.destination);
+                            padGain.connect(menuMusicGain);
                             pad.type = 'sine';
                             pad.frequency.setValueAtTime(noteData.note * 1.5, menuScheduledTime); // fifth
                             padGain.gain.setValueAtTime(0.03, menuScheduledTime);
@@ -1051,7 +1232,7 @@
                         const sub = audioCtx.createOscillator();
                         const subGain = audioCtx.createGain();
                         sub.connect(subGain);
-                        subGain.connect(audioCtx.destination);
+                        subGain.connect(menuMusicGain);
                         sub.type = 'sine';
                         sub.frequency.setValueAtTime(noteData.note / 2, menuScheduledTime);
                         subGain.gain.setValueAtTime(0.04, menuScheduledTime);
@@ -1070,7 +1251,7 @@
                     const arp = audioCtx.createOscillator();
                     const arpGain = audioCtx.createGain();
                     arp.connect(arpGain);
-                    arpGain.connect(audioCtx.destination);
+                    arpGain.connect(menuMusicGain);
                     arp.type = 'triangle';
                     arp.frequency.setValueAtTime(arpNote, now);
                     arpGain.gain.setValueAtTime(0.025, now);
@@ -1085,7 +1266,7 @@
                     const kick = audioCtx.createOscillator();
                     const kickGain = audioCtx.createGain();
                     kick.connect(kickGain);
-                    kickGain.connect(audioCtx.destination);
+                    kickGain.connect(menuMusicGain);
                     kick.type = 'sine';
                     kick.frequency.setValueAtTime(100, now);
                     kick.frequency.exponentialRampToValueAtTime(30, now + 0.15);
@@ -1100,7 +1281,7 @@
                     const kick2 = audioCtx.createOscillator();
                     const kick2Gain = audioCtx.createGain();
                     kick2.connect(kick2Gain);
-                    kick2Gain.connect(audioCtx.destination);
+                    kick2Gain.connect(menuMusicGain);
                     kick2.type = 'sine';
                     kick2.frequency.setValueAtTime(80, now);
                     kick2.frequency.exponentialRampToValueAtTime(35, now + 0.1);
@@ -1116,7 +1297,7 @@
                     const bassLine = audioCtx.createOscillator();
                     const bassLineGain = audioCtx.createGain();
                     bassLine.connect(bassLineGain);
-                    bassLineGain.connect(audioCtx.destination);
+                    bassLineGain.connect(menuMusicGain);
                     bassLine.type = 'sawtooth';
                     bassLine.frequency.setValueAtTime(bassNote, now);
                     bassLineGain.gain.setValueAtTime(0.06, now);
@@ -1130,7 +1311,7 @@
                     const hat = audioCtx.createOscillator();
                     const hatGain = audioCtx.createGain();
                     hat.connect(hatGain);
-                    hatGain.connect(audioCtx.destination);
+                    hatGain.connect(menuMusicGain);
                     hat.type = 'square';
                     hat.frequency.setValueAtTime(800 + Math.random() * 600, now);
                     hatGain.gain.setValueAtTime(0.015, now);
@@ -1145,7 +1326,7 @@
                     const snareBody = audioCtx.createOscillator();
                     const snareGain = audioCtx.createGain();
                     snareBody.connect(snareGain);
-                    snareGain.connect(audioCtx.destination);
+                    snareGain.connect(menuMusicGain);
                     snareBody.type = 'triangle';
                     snareBody.frequency.setValueAtTime(180, now);
                     snareBody.frequency.exponentialRampToValueAtTime(100, now + 0.08);
@@ -1158,7 +1339,7 @@
                     const snareNoise = audioCtx.createOscillator();
                     const snareNoiseGain = audioCtx.createGain();
                     snareNoise.connect(snareNoiseGain);
-                    snareNoiseGain.connect(audioCtx.destination);
+                    snareNoiseGain.connect(menuMusicGain);
                     snareNoise.type = 'sawtooth';
                     snareNoise.frequency.setValueAtTime(300, now);
                     snareNoiseGain.gain.setValueAtTime(0.04, now);
@@ -1172,7 +1353,7 @@
                     const crash = audioCtx.createOscillator();
                     const crashGain = audioCtx.createGain();
                     crash.connect(crashGain);
-                    crashGain.connect(audioCtx.destination);
+                    crashGain.connect(menuMusicGain);
                     crash.type = 'sawtooth';
                     crash.frequency.setValueAtTime(400, now);
                     crash.frequency.exponentialRampToValueAtTime(100, now + 0.5);
@@ -1191,6 +1372,12 @@
             if (menuMusicInterval) {
                 clearInterval(menuMusicInterval);
                 menuMusicInterval = null;
+            }
+            // Immediately silence and disconnect menu music
+            if (menuMusicGain) {
+                menuMusicGain.gain.setValueAtTime(0, audioCtx ? audioCtx.currentTime : 0);
+                menuMusicGain.disconnect();
+                menuMusicGain = null;
             }
             updateMenuMusicButton();
         }
@@ -3305,8 +3492,11 @@
             }
         }
 
+        const MAX_DEBRIS = 50;
+
         function spawnDebris(x, y, count) {
-            for (let i = 0; i < count; i++) {
+            const actualCount = debris.length > MAX_DEBRIS ? Math.floor(count / 2) : count;
+            for (let i = 0; i < actualCount; i++) {
                 debris.push({
                     x, y,
                     vx: (Math.random() - 0.5) * 15,
@@ -3314,9 +3504,13 @@
                     rotation: Math.random() * 360,
                     rotSpeed: (Math.random() - 0.5) * 20,
                     size: Math.random() * 12 + 4,
-                    life: 120,
+                    life: 100,
                     color: ['#555', '#666', '#777', '#444'][Math.floor(Math.random() * 4)]
                 });
+            }
+            // Hard limit
+            if (debris.length > MAX_DEBRIS) {
+                debris.splice(0, debris.length - MAX_DEBRIS);
             }
         }
 
@@ -4746,6 +4940,8 @@
             }
         }
 
+        const MAX_PARTICLES = 200; // Limit particles to prevent lag
+
         function createExplosion(x, y, large = false) {
             explosions.push({ x, y, frame: 0, maxFrames: 12, size: large ? 128 : 64 });
             playSound(large ? 'megaExplosion' : 'explosion');
@@ -4754,16 +4950,24 @@
                 shockwaves.push({ x, y, radius: 0, maxRadius: 150, speed: 8, color: '#f80' });
             }
 
-            const count = large ? 35 : 15;
+            // Reduce particle count if we're at the limit
+            const baseCount = large ? 20 : 10;
+            const count = particles.length > MAX_PARTICLES ? Math.floor(baseCount / 2) : baseCount;
+
             for (let i = 0; i < count; i++) {
                 particles.push({
                     x, y,
-                    vx: (Math.random() - 0.5) * (large ? 18 : 12),
-                    vy: (Math.random() - 0.5) * (large ? 18 : 12),
-                    life: 50 + Math.random() * 40,
+                    vx: (Math.random() - 0.5) * (large ? 16 : 10),
+                    vy: (Math.random() - 0.5) * (large ? 16 : 10),
+                    life: 40 + Math.random() * 30,
                     color: ['#ff0', '#f80', '#f00', '#fff', '#f0f'][Math.floor(Math.random() * 5)],
-                    size: Math.random() * 8 + 3
+                    size: Math.random() * 6 + 3
                 });
+            }
+
+            // Hard limit - remove oldest particles if over limit
+            if (particles.length > MAX_PARTICLES) {
+                particles.splice(0, particles.length - MAX_PARTICLES);
             }
         }
 
@@ -5457,8 +5661,8 @@
                                 unlockAchievement('legendary_win');
                             }
 
-                            // Multiple explosions
-                            for (let i = 0; i < 12; i++) {
+                            // Multiple explosions (reduced for performance)
+                            for (let i = 0; i < 6; i++) {
                                 setTimeout(() => {
                                     if (!boss) return;
                                     createExplosion(
@@ -5466,12 +5670,12 @@
                                         b.y + Math.random() * b.height,
                                         true
                                     );
-                                }, i * 120);
+                                }, i * 150);
                             }
 
                             screenShake = 60;
                             shockwaves.push({ x: b.x + b.width/2, y: b.y + b.height/2, radius: 0, maxRadius: 500, speed: 12, color: '#ff0' });
-                            spawnDebris(b.x + b.width/2, b.y + b.height/2, 30);
+                            spawnDebris(b.x + b.width/2, b.y + b.height/2, 15);
                             playSound('megaExplosion');
                             triggerSlowMotion();
                             playVoice('GODLIKE');
