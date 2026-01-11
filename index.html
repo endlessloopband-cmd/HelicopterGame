@@ -209,19 +209,21 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(0, 0, 20, 0.95);
+            background: #000012;
             color: #fff;
             z-index: 200;
+            overflow-y: auto;
+            padding: 20px 0;
         }
         .overlay h1 {
-            font-size: 36px;
+            font-size: 28px;
             background: linear-gradient(90deg, #0ff, #f0f, #ff0, #0ff);
             background-size: 400% 100%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             animation: rainbowText 3s linear infinite;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             text-shadow: none;
             filter: drop-shadow(0 0 20px #0ff);
         }
@@ -230,9 +232,9 @@
             100% { background-position: 400% 50%; }
         }
         .subtitle {
-            font-size: 14px;
+            font-size: 12px;
             color: #f0f;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             text-shadow: 0 0 20px #f0f;
             animation: subtitleGlow 1s infinite alternate;
         }
@@ -241,15 +243,15 @@
             100% { text-shadow: 0 0 30px #f0f, 0 0 50px #f0f; }
         }
         .menu-option {
-            margin: 8px;
-            padding: 15px 30px;
-            font-size: 12px;
+            margin: 5px;
+            padding: 12px 25px;
+            font-size: 11px;
             font-family: 'Press Start 2P', monospace;
             background: transparent;
             color: #0ff;
             border: 2px solid #0ff;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
             text-shadow: 0 0 10px #0ff;
             box-shadow: 0 0 10px rgba(0,255,255,0.3);
         }
@@ -258,8 +260,9 @@
             color: #000;
             box-shadow: 0 0 30px #0ff, 0 0 50px #0ff;
             text-shadow: none;
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
+        .difficulty-btn { min-width: 180px; }
         .difficulty-btn.easy { border-color: #0f0; color: #0f0; text-shadow: 0 0 10px #0f0; }
         .difficulty-btn.easy:hover { background: #0f0; box-shadow: 0 0 30px #0f0; }
         .difficulty-btn.normal { border-color: #ff0; color: #ff0; text-shadow: 0 0 10px #ff0; }
@@ -272,12 +275,22 @@
             0%, 100% { box-shadow: 0 0 10px #f0f; }
             50% { box-shadow: 0 0 30px #f0f, 0 0 50px #0ff; }
         }
-        .mode-section { margin-top: 20px; }
-        .mode-btn { font-size: 10px; padding: 10px 20px; border-color: #888; color: #888; }
+        .mode-section { margin-top: 12px; display: flex; gap: 10px; }
+        .mode-btn { font-size: 9px; padding: 10px 18px; border-color: #888; color: #888; }
         .mode-btn:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,0.1); }
-        .extra-section { margin-top: 15px; display: flex; gap: 10px; justify-content: center; }
-        .extra-btn { font-size: 9px; padding: 8px 15px; border-color: #f0f; color: #f0f; }
+        .extra-section { margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; max-width: 600px; }
+        .extra-btn { font-size: 8px; padding: 8px 12px; border-color: #f0f; color: #f0f; }
         .extra-btn:hover { border-color: #fff; color: #fff; background: rgba(255,0,255,0.2); }
+        .controls-info { font-size: 8px !important; color: #555 !important; margin: 0 !important; line-height: 1.6; }
+        .difficulty-section { display: flex; flex-direction: column; align-items: center; margin-top: 10px; }
+        .bottom-section { margin-top: 15px; display: flex; align-items: center; gap: 15px; }
+        .music-btn {
+            padding: 8px 15px; font-size: 10px; font-family: 'Press Start 2P', monospace;
+            background: #111; color: #0ff; border: 2px solid #0ff; cursor: pointer;
+            transition: all 0.2s; text-shadow: 0 0 5px #0ff;
+        }
+        .music-btn:hover { background: #0ff; color: #000; text-shadow: none; }
+        .music-btn.active { border-color: #0f0; color: #0f0; text-shadow: 0 0 5px #0f0; }
         /* Skin screen */
         #skinGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 500px; margin: 0 auto 20px; }
         .skin-item { background: rgba(0,0,0,0.5); border: 2px solid #444; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s; }
@@ -347,6 +360,59 @@
             #mobileControls { display: block; }
             #ui { font-size: 10px; }
         }
+        /* Progression System UI */
+        #xpBarGame { position: relative; width: 150px; height: 18px; background: rgba(0,0,0,0.7); border: 2px solid #0ff; border-radius: 6px; align-self: center; }
+        #xpBarGameFill { height: 100%; background: linear-gradient(90deg, #0ff, #f0f); width: 0%; transition: width 0.3s; border-radius: 4px; }
+        #xpBarGameText { position: absolute; width: 100%; text-align: center; font-size: 8px; color: #fff; top: 3px; left: 0; text-shadow: 0 0 5px #000; }
+        #progressionScreen { overflow-y: auto; max-height: 100%; }
+        .prog-header { display: flex; gap: 20px; justify-content: center; margin: 10px 0; padding: 10px; background: rgba(0,255,255,0.1); border: 1px solid #0ff; }
+        .prog-stat { text-align: center; }
+        .prog-stat-label { font-size: 8px; color: #888; display: block; }
+        .prog-stat-value { font-size: 14px; color: #0ff; }
+        .prog-tabs { display: flex; gap: 10px; justify-content: center; margin: 10px 0; }
+        .prog-tab { padding: 8px 16px; font-size: 10px; font-family: 'Press Start 2P', monospace; background: transparent; border: 2px solid #444; color: #888; cursor: pointer; }
+        .prog-tab.active { border-color: #0ff; color: #0ff; box-shadow: 0 0 10px #0ff; }
+        .prog-tab:hover { border-color: #0ff; }
+        .cat-tabs { display: flex; gap: 5px; justify-content: center; margin: 10px 0; }
+        .cat-tab { padding: 5px 12px; font-size: 8px; font-family: 'Press Start 2P', monospace; background: transparent; border: 1px solid #444; color: #666; cursor: pointer; }
+        .cat-tab.active { border-color: #f0f; color: #f0f; }
+        .upgrade-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-width: 500px; margin: 0 auto; padding: 10px; }
+        .perm-upgrade { display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(0,0,0,0.6); border: 2px solid #333; text-align: left; }
+        .perm-upgrade.can-buy { border-color: #0f0; cursor: pointer; }
+        .perm-upgrade.maxed { border-color: #fd0; }
+        .perm-upgrade:hover.can-buy { background: rgba(0,255,0,0.1); }
+        .upgrade-icon { font-size: 20px; }
+        .upgrade-info { flex: 1; }
+        .upgrade-name { font-size: 9px; color: #fff; }
+        .upgrade-desc { font-size: 7px; color: #888; margin-top: 2px; }
+        .upgrade-lvl { font-size: 7px; color: #0ff; }
+        .upgrade-cost { padding: 4px 8px; font-size: 9px; font-family: 'Press Start 2P', monospace; background: #111; border: 1px solid #0ff; color: #0ff; cursor: pointer; }
+        .upgrade-cost.disabled { opacity: 0.4; border-color: #444; color: #444; cursor: not-allowed; }
+        .upgrade-cost.maxed { background: #fd0; color: #000; border-color: #fd0; }
+        .skill-tree { display: flex; justify-content: center; gap: 20px; padding: 10px; }
+        .skill-branch { width: 140px; text-align: center; }
+        .skill-branch h4 { font-size: 10px; color: #f0f; margin-bottom: 10px; }
+        .skill-nodes { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .skill-node { width: 100px; padding: 8px; background: rgba(0,0,0,0.6); border: 2px solid #333; cursor: pointer; transition: all 0.2s; }
+        .skill-node.locked { opacity: 0.3; cursor: not-allowed; }
+        .skill-node.can-unlock { border-color: #0f0; animation: skillPulse 1s infinite; }
+        .skill-node.unlocked { border-color: #fd0; background: rgba(255,215,0,0.1); }
+        .skill-node:hover:not(.locked) { transform: scale(1.05); }
+        .skill-icon { font-size: 18px; }
+        .skill-name { font-size: 7px; color: #fff; margin-top: 3px; }
+        .skill-req { font-size: 6px; color: #888; }
+        .prestige-info { text-align: center; padding: 20px; }
+        .prestige-stars { font-size: 28px; display: block; margin: 10px 0; }
+        .prestige-bonus { font-size: 12px; color: #fd0; margin: 10px 0; }
+        .prestige-btn { background: linear-gradient(90deg, #fd0, #f80) !important; color: #000 !important; border-color: #fd0 !important; font-size: 12px !important; padding: 12px 24px !important; margin: 20px 0 !important; }
+        .prestige-btn:disabled { background: #333 !important; color: #666 !important; border-color: #444 !important; }
+        .prestige-rewards { margin-top: 20px; }
+        .prestige-rewards h4 { font-size: 10px; color: #888; margin-bottom: 10px; }
+        .prestige-skin { display: inline-block; padding: 5px 10px; margin: 3px; font-size: 8px; border: 1px solid #444; }
+        .prestige-skin.unlocked { border-color: #fd0; color: #fd0; }
+        @keyframes skillPulse { 0%, 100% { box-shadow: 0 0 5px #0f0; } 50% { box-shadow: 0 0 15px #0f0; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading { display: inline-block; animation: spin 1s linear infinite; }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
@@ -358,6 +424,7 @@
         <div id="ui">
             <div><span class="score-label">SCORE</span><br><span id="score">00000000</span></div>
             <div><span class="level-display">STAGE</span><br><span id="level">01</span></div>
+            <div id="xpBarGame"><div id="xpBarGameFill"></div><span id="xpBarGameText">LV.1</span></div>
             <div><span class="lives-display">LIVES</span><br><span id="lives"></span></div>
             <div><span class="coins-display">COINS</span><br><span id="coins">🪙 0</span></div>
         </div>
@@ -372,21 +439,29 @@
         <div id="startScreen" class="overlay">
             <h1>CHOPPER COMMAND</h1>
             <p class="subtitle">★ LEGENDARY EDITION ★</p>
-            <p style="font-size:10px;color:#666;margin-bottom:15px;">SELECT DIFFICULTY</p>
-            <button class="menu-option difficulty-btn easy" onclick="startGame('easy')">EASY</button>
-            <button class="menu-option difficulty-btn normal" onclick="startGame('normal')">NORMAL</button>
-            <button class="menu-option difficulty-btn hard" onclick="startGame('hard')">HARD</button>
-            <button class="menu-option difficulty-btn legendary" onclick="startGame('legendary')">LEGENDARY</button>
+            <div class="difficulty-section">
+                <button class="menu-option difficulty-btn easy" onclick="startGame('easy')">EASY</button>
+                <button class="menu-option difficulty-btn normal" onclick="startGame('normal')">NORMAL</button>
+                <button class="menu-option difficulty-btn hard" onclick="startGame('hard')">HARD</button>
+                <button class="menu-option difficulty-btn legendary" onclick="startGame('legendary')">LEGENDARY</button>
+            </div>
             <div class="mode-section">
-                <button class="menu-option mode-btn" onclick="startGame('endless')">ENDLESS MODE</button>
+                <button class="menu-option mode-btn" onclick="startGame('endless')">ENDLESS</button>
                 <button class="menu-option mode-btn" onclick="startGame('bossrush')">BOSS RUSH</button>
             </div>
             <div class="extra-section">
+                <button class="menu-option extra-btn" onclick="showProgressionScreen()" style="background:linear-gradient(90deg,#0ff,#f0f);color:#000;">⚙️ UPGRADES</button>
                 <button class="menu-option extra-btn" onclick="showHeliSelect()">🚁 HELICOPTERS</button>
                 <button class="menu-option extra-btn" onclick="showSkinScreen()">🎨 SKINS</button>
                 <button class="menu-option extra-btn" onclick="showAchievements()">🏆 ACHIEVEMENTS</button>
             </div>
-            <p class="controls-info">WASD: Move | SPACE: Fire | B: Bomb | L: Laser | R: Rockets | U: Ultimate<br>ESC: Pause | M: Music | 1-4: Weapons</p>
+            <div class="multiplayer-section" style="margin-top:15px;">
+                <button class="menu-option" onclick="showMultiplayerMenu()" style="border-color:#0ff;color:#0ff;font-size:12px;padding:12px 30px;">🌐 MULTIPLAYER</button>
+            </div>
+            <div class="bottom-section">
+                <p class="controls-info">WASD: Move | SPACE: Fire | B: Bomb | L: Laser | R: Rockets | U: Ultimate<br>ESC: Pause | M: Music | 1-4: Weapons</p>
+                <button id="menuMusicBtn" class="music-btn" onclick="toggleMenuMusic()">🎵 OFF</button>
+            </div>
         </div>
 
         <div id="pauseScreen" class="overlay" style="display:none;">
@@ -433,6 +508,114 @@
             <p style="color:#888;font-size:10px;margin-bottom:15px;" id="achievementProgress">0/15 Unlocked</p>
             <div id="achievementGrid"></div>
             <button class="menu-option" onclick="closeAchievements()">BACK</button>
+        </div>
+
+        <!-- MULTIPLAYER SCREENS -->
+        <div id="multiplayerScreen" class="overlay" style="display:none;">
+            <h1>🌐 LAN MULTIPLAYER</h1>
+            <p style="color:#0ff;font-size:10px;margin-bottom:20px;">Play with a friend on local network!</p>
+            <div style="margin-bottom:20px;">
+                <label style="font-size:10px;color:#888;">YOUR NICKNAME:</label><br>
+                <input type="text" id="nicknameInput" maxlength="12" style="margin-top:8px;padding:10px 15px;font-family:'Press Start 2P';font-size:12px;background:#111;color:#0ff;border:2px solid #0ff;text-align:center;width:200px;">
+            </div>
+            <div style="display:flex;gap:15px;">
+                <button class="menu-option" onclick="showCreateRoom()" style="border-color:#0f0;color:#0f0;">CREATE ROOM</button>
+                <button class="menu-option" onclick="showJoinRoom()" style="border-color:#f0f;color:#f0f;">JOIN ROOM</button>
+            </div>
+            <button class="menu-option" onclick="backToMainMenu()" style="margin-top:20px;font-size:9px;">← BACK</button>
+        </div>
+
+        <div id="createRoomScreen" class="overlay" style="display:none;">
+            <h1>CREATE ROOM</h1>
+            <p style="color:#888;font-size:9px;margin-bottom:15px;">Waiting for ICE candidates...</p>
+            <div id="hostCodeBox" style="display:none;margin-bottom:15px;">
+                <p style="color:#0f0;font-size:10px;">Share this code with your friend:</p>
+                <div style="background:#111;border:2px solid #0f0;padding:10px;margin:10px 0;max-width:400px;word-break:break-all;font-size:8px;max-height:80px;overflow-y:auto;" id="hostCode"></div>
+                <button class="menu-option" onclick="copyCode('hostCode')" style="font-size:9px;padding:8px 15px;">📋 COPY CODE</button>
+            </div>
+            <div style="margin-top:20px;">
+                <p style="color:#ff0;font-size:10px;">Paste friend's answer code:</p>
+                <textarea id="answerCodeInput" style="width:350px;height:60px;margin:10px 0;padding:8px;font-family:monospace;font-size:8px;background:#111;color:#ff0;border:2px solid #ff0;"></textarea><br>
+                <button class="menu-option" onclick="connectWithAnswer()" style="border-color:#ff0;color:#ff0;">CONNECT</button>
+            </div>
+            <button class="menu-option" onclick="backToMultiplayerMenu()" style="margin-top:20px;font-size:9px;">← BACK</button>
+        </div>
+
+        <div id="joinRoomScreen" class="overlay" style="display:none;">
+            <h1>JOIN ROOM</h1>
+            <p style="color:#888;font-size:9px;margin-bottom:15px;">Paste the host's code below</p>
+            <div style="margin-bottom:15px;">
+                <p style="color:#0f0;font-size:10px;">Enter host's code:</p>
+                <textarea id="joinCodeInput" style="width:350px;height:60px;margin:10px 0;padding:8px;font-family:monospace;font-size:8px;background:#111;color:#0f0;border:2px solid #0f0;"></textarea><br>
+                <button class="menu-option" onclick="joinWithCode()" style="border-color:#0f0;color:#0f0;">GENERATE ANSWER</button>
+            </div>
+            <div id="guestCodeBox" style="display:none;margin-top:15px;">
+                <p style="color:#f0f;font-size:10px;">Send this answer code to host:</p>
+                <div style="background:#111;border:2px solid #f0f;padding:10px;margin:10px 0;max-width:400px;word-break:break-all;font-size:8px;max-height:80px;overflow-y:auto;" id="guestCode"></div>
+                <button class="menu-option" onclick="copyCode('guestCode')" style="font-size:9px;padding:8px 15px;">📋 COPY CODE</button>
+            </div>
+            <button class="menu-option" onclick="backToMultiplayerMenu()" style="margin-top:20px;font-size:9px;">← BACK</button>
+        </div>
+
+        <div id="hostLobbyScreen" class="overlay" style="display:none;">
+            <h1>🎮 ROOM READY!</h1>
+            <p style="color:#0f0;font-size:12px;margin:20px 0;">Connected: <span id="connectedPlayer" style="color:#0ff;">Player 2</span></p>
+            <p style="color:#888;font-size:10px;margin-bottom:20px;">Select difficulty to start:</p>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <button class="menu-option difficulty-btn easy" onclick="hostStartGame('easy')">EASY</button>
+                <button class="menu-option difficulty-btn normal" onclick="hostStartGame('normal')">NORMAL</button>
+                <button class="menu-option difficulty-btn hard" onclick="hostStartGame('hard')">HARD</button>
+                <button class="menu-option difficulty-btn legendary" onclick="hostStartGame('legendary')">LEGENDARY</button>
+            </div>
+            <button class="menu-option" onclick="backToMainMenu()" style="margin-top:20px;font-size:9px;">CANCEL</button>
+        </div>
+
+        <div id="guestLobbyScreen" class="overlay" style="display:none;">
+            <h1>🎮 CONNECTED!</h1>
+            <p style="color:#0f0;font-size:12px;margin:20px 0;">Host: <span id="hostPlayerName" style="color:#0ff;">Player 1</span></p>
+            <p style="color:#888;font-size:10px;">Waiting for host to start game...</p>
+            <div class="loader" style="margin:30px auto;width:40px;height:40px;border:4px solid #333;border-top-color:#0ff;border-radius:50%;animation:spin 1s linear infinite;"></div>
+            <button class="menu-option" onclick="backToMainMenu()" style="margin-top:20px;font-size:9px;">LEAVE</button>
+        </div>
+
+        <div id="progressionScreen" class="overlay" style="display:none;">
+            <h1>⚙️ UPGRADES</h1>
+            <div class="prog-header">
+                <div class="prog-stat"><span class="prog-stat-label">LEVEL</span><span class="prog-stat-value" id="progLevel">1</span></div>
+                <div class="prog-stat"><span class="prog-stat-label">XP</span><span class="prog-stat-value" id="progXP">0/100</span></div>
+                <div class="prog-stat"><span class="prog-stat-label">COINS</span><span class="prog-stat-value" id="progCoins">0 🪙</span></div>
+                <div class="prog-stat"><span class="prog-stat-label">PRESTIGE</span><span class="prog-stat-value" id="progPrestige">-</span></div>
+            </div>
+            <div class="prog-tabs">
+                <button class="prog-tab active" onclick="showProgTab('upgrades')">UPGRADES</button>
+                <button class="prog-tab" onclick="showProgTab('skills')">SKILLS</button>
+                <button class="prog-tab" onclick="showProgTab('prestige')">PRESTIGE</button>
+            </div>
+            <div id="progUpgradesTab">
+                <div class="cat-tabs">
+                    <button class="cat-tab active" onclick="showUpgradeCat('offense')">⚔️ OFFENSE</button>
+                    <button class="cat-tab" onclick="showUpgradeCat('defense')">🛡️ DEFENSE</button>
+                    <button class="cat-tab" onclick="showUpgradeCat('utility')">🔧 UTILITY</button>
+                </div>
+                <div id="upgradeGridPerm" class="upgrade-grid"></div>
+            </div>
+            <div id="progSkillsTab" style="display:none;">
+                <div class="skill-tree">
+                    <div class="skill-branch"><h4>⚔️ ATTACK</h4><div id="skillsAttack" class="skill-nodes"></div></div>
+                    <div class="skill-branch"><h4>🛡️ DEFENSE</h4><div id="skillsDefense" class="skill-nodes"></div></div>
+                    <div class="skill-branch"><h4>🔧 UTILITY</h4><div id="skillsUtility" class="skill-nodes"></div></div>
+                </div>
+            </div>
+            <div id="progPrestigeTab" style="display:none;">
+                <div class="prestige-info">
+                    <span class="prestige-stars" id="prestigeStarsDisplay"></span>
+                    <p class="prestige-bonus" id="prestigeBonusDisplay">Bonus: +0% All Stats</p>
+                    <button class="menu-option prestige-btn" id="prestigeBtn" onclick="confirmPrestige()">⭐ PRESTIGE</button>
+                    <p style="font-size:8px;color:#888;margin-top:10px;">Requires Level 10. Resets level but keeps upgrades.</p>
+                    <div class="prestige-rewards"><h4>PRESTIGE SKINS</h4><div id="prestigeSkinsList"></div></div>
+                </div>
+            </div>
+            <button class="menu-option" onclick="closeProgressionScreen()">BACK</button>
         </div>
 
         <div id="mobileControls">
@@ -720,6 +903,680 @@
             }
         }
 
+        // ============ MENU MUSIC ============
+        let menuMusicPlaying = false;
+        let menuMusicInterval = null;
+        let menuBeat = 0;
+
+        // Catchy chiptune melody for menu (C major scale inspired retro tune)
+        const menuMelody = [
+            // Intro phrase
+            { note: 523, dur: 0.15 }, // C5
+            { note: 587, dur: 0.15 }, // D5
+            { note: 659, dur: 0.3 },  // E5
+            { note: 523, dur: 0.15 }, // C5
+            { note: 0, dur: 0.15 },   // rest
+            { note: 784, dur: 0.3 },  // G5
+            { note: 659, dur: 0.15 }, // E5
+            { note: 523, dur: 0.3 },  // C5
+            // Second phrase
+            { note: 698, dur: 0.15 }, // F5
+            { note: 659, dur: 0.15 }, // E5
+            { note: 587, dur: 0.3 },  // D5
+            { note: 523, dur: 0.15 }, // C5
+            { note: 0, dur: 0.15 },   // rest
+            { note: 440, dur: 0.3 },  // A4
+            { note: 523, dur: 0.3 },  // C5
+            { note: 0, dur: 0.15 },   // rest
+            // Third phrase (higher energy)
+            { note: 784, dur: 0.1 },  // G5
+            { note: 784, dur: 0.1 },  // G5
+            { note: 880, dur: 0.2 },  // A5
+            { note: 784, dur: 0.15 }, // G5
+            { note: 659, dur: 0.15 }, // E5
+            { note: 523, dur: 0.3 },  // C5
+            { note: 587, dur: 0.15 }, // D5
+            { note: 659, dur: 0.4 },  // E5
+            // Ending phrase
+            { note: 523, dur: 0.15 }, // C5
+            { note: 659, dur: 0.15 }, // E5
+            { note: 784, dur: 0.15 }, // G5
+            { note: 1047, dur: 0.4 }, // C6
+            { note: 880, dur: 0.2 },  // A5
+            { note: 784, dur: 0.2 },  // G5
+            { note: 659, dur: 0.3 },  // E5
+            { note: 523, dur: 0.4 },  // C5
+        ];
+
+        const menuBassPattern = [
+            131, 0, 131, 0, 165, 0, 165, 0,  // C3, E3
+            147, 0, 147, 0, 175, 0, 196, 0,  // D3, F3, G3
+            131, 0, 165, 0, 196, 0, 262, 0,  // C3, E3, G3, C4
+            175, 0, 147, 0, 131, 0, 0, 0     // F3, D3, C3
+        ];
+
+        let menuNoteIndex = 0;
+        let menuScheduledTime = 0;
+
+        function playMenuMusic() {
+            if (menuMusicPlaying) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            menuMusicPlaying = true;
+            menuBeat = 0;
+            menuNoteIndex = 0;
+            menuScheduledTime = audioCtx.currentTime + 0.1;
+
+            menuMusicInterval = setInterval(() => {
+                if (!audioCtx || !menuMusicPlaying) return;
+                const now = audioCtx.currentTime;
+
+                // Schedule melody notes ahead
+                while (menuScheduledTime < now + 0.2) {
+                    const noteData = menuMelody[menuNoteIndex % menuMelody.length];
+
+                    if (noteData.note > 0) {
+                        // Main melody (square wave)
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(noteData.note, menuScheduledTime);
+                        gain.gain.setValueAtTime(0.08, menuScheduledTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, menuScheduledTime + noteData.dur * 0.9);
+                        osc.start(menuScheduledTime);
+                        osc.stop(menuScheduledTime + noteData.dur);
+
+                        // Harmony (triangle wave, octave down)
+                        const osc2 = audioCtx.createOscillator();
+                        const gain2 = audioCtx.createGain();
+                        osc2.connect(gain2);
+                        gain2.connect(audioCtx.destination);
+                        osc2.type = 'triangle';
+                        osc2.frequency.setValueAtTime(noteData.note / 2, menuScheduledTime);
+                        gain2.gain.setValueAtTime(0.05, menuScheduledTime);
+                        gain2.gain.exponentialRampToValueAtTime(0.01, menuScheduledTime + noteData.dur * 0.8);
+                        osc2.start(menuScheduledTime);
+                        osc2.stop(menuScheduledTime + noteData.dur);
+                    }
+
+                    menuScheduledTime += noteData.dur;
+                    menuNoteIndex++;
+                }
+
+                // Bass drum on beats
+                if (menuBeat % 4 === 0) {
+                    const bass = audioCtx.createOscillator();
+                    const bassGain = audioCtx.createGain();
+                    bass.connect(bassGain);
+                    bassGain.connect(audioCtx.destination);
+                    bass.type = 'sine';
+                    bass.frequency.setValueAtTime(80, now);
+                    bass.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+                    bassGain.gain.setValueAtTime(0.15, now);
+                    bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    bass.start(now);
+                    bass.stop(now + 0.15);
+                }
+
+                // Bass line
+                const bassNote = menuBassPattern[menuBeat % menuBassPattern.length];
+                if (bassNote > 0) {
+                    const bassLine = audioCtx.createOscillator();
+                    const bassLineGain = audioCtx.createGain();
+                    bassLine.connect(bassLineGain);
+                    bassLineGain.connect(audioCtx.destination);
+                    bassLine.type = 'triangle';
+                    bassLine.frequency.setValueAtTime(bassNote, now);
+                    bassLineGain.gain.setValueAtTime(0.1, now);
+                    bassLineGain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    bassLine.start(now);
+                    bassLine.stop(now + 0.12);
+                }
+
+                // Hi-hat pattern
+                if (menuBeat % 2 === 1) {
+                    const hat = audioCtx.createOscillator();
+                    const hatGain = audioCtx.createGain();
+                    hat.connect(hatGain);
+                    hatGain.connect(audioCtx.destination);
+                    hat.type = 'square';
+                    hat.frequency.setValueAtTime(1200 + Math.random() * 400, now);
+                    hatGain.gain.setValueAtTime(0.02, now);
+                    hatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                    hat.start(now);
+                    hat.stop(now + 0.03);
+                }
+
+                // Snare on 2 and 4
+                if (menuBeat % 8 === 4) {
+                    const noise = audioCtx.createOscillator();
+                    const noiseGain = audioCtx.createGain();
+                    noise.connect(noiseGain);
+                    noiseGain.connect(audioCtx.destination);
+                    noise.type = 'sawtooth';
+                    noise.frequency.setValueAtTime(200, now);
+                    noise.frequency.exponentialRampToValueAtTime(80, now + 0.1);
+                    noiseGain.gain.setValueAtTime(0.08, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    noise.start(now);
+                    noise.stop(now + 0.1);
+                }
+
+                menuBeat++;
+            }, 120); // ~125 BPM
+        }
+
+        function stopMenuMusic() {
+            menuMusicPlaying = false;
+            if (menuMusicInterval) {
+                clearInterval(menuMusicInterval);
+                menuMusicInterval = null;
+            }
+            updateMenuMusicButton();
+        }
+
+        function toggleMenuMusic() {
+            if (menuMusicPlaying) {
+                stopMenuMusic();
+                localStorage.setItem('menuMusicOn', 'false');
+            } else {
+                playMenuMusic();
+                localStorage.setItem('menuMusicOn', 'true');
+            }
+            updateMenuMusicButton();
+        }
+
+        function updateMenuMusicButton() {
+            const btn = document.getElementById('menuMusicBtn');
+            if (btn) {
+                btn.textContent = menuMusicPlaying ? '🎵 ON' : '🎵 OFF';
+                if (menuMusicPlaying) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            }
+        }
+
+        // ============ MULTIPLAYER (WebRTC) ============
+        let isMultiplayer = false;
+        let isHost = false;
+        let peerConnection = null;
+        let dataChannel = null;
+        let connectionReady = false;
+        let playerNickname = localStorage.getItem('playerNickname') || 'Player';
+        let remotePlayer = {
+            x: 600, y: 300,
+            nickname: 'Player 2',
+            animFrame: 0,
+            bullets: [],
+            lives: 3,
+            score: 0,
+            dead: false,
+            respawnTimer: 0,
+            invincible: 0
+        };
+
+        const rtcConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        function initWebRTC(asHost) {
+            isHost = asHost;
+            peerConnection = new RTCPeerConnection(rtcConfig);
+
+            peerConnection.onicecandidate = (e) => {
+                if (e.candidate === null) {
+                    // ICE gathering complete - show the full offer/answer
+                    const desc = peerConnection.localDescription;
+                    const code = btoa(JSON.stringify(desc));
+                    if (isHost) {
+                        document.getElementById('hostCode').textContent = code;
+                        document.getElementById('hostCodeBox').style.display = 'block';
+                    } else {
+                        document.getElementById('guestCode').textContent = code;
+                        document.getElementById('guestCodeBox').style.display = 'block';
+                    }
+                }
+            };
+
+            peerConnection.ondatachannel = (e) => {
+                dataChannel = e.channel;
+                setupDataChannel();
+            };
+
+            if (isHost) {
+                dataChannel = peerConnection.createDataChannel('game');
+                setupDataChannel();
+            }
+        }
+
+        function setupDataChannel() {
+            dataChannel.onopen = () => {
+                connectionReady = true;
+                console.log('Data channel open!');
+                // Send nickname
+                sendMP({ type: 'nick', name: playerNickname });
+                // If host, start game selection
+                if (isHost) {
+                    showHostLobby();
+                } else {
+                    showGuestLobby();
+                }
+            };
+
+            dataChannel.onclose = () => {
+                connectionReady = false;
+                handleDisconnect();
+            };
+
+            dataChannel.onmessage = (e) => {
+                receiveMP(JSON.parse(e.data));
+            };
+        }
+
+        function sendMP(data) {
+            if (dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(JSON.stringify(data));
+            }
+        }
+
+        async function createRoom() {
+            initWebRTC(true);
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            // Code will appear when ICE gathering completes
+        }
+
+        async function joinWithCode() {
+            let code = document.getElementById('joinCodeInput').value;
+            // Remove all whitespace and newlines
+            code = code.replace(/\s/g, '');
+            if (!code) return;
+
+            initWebRTC(false);
+            try {
+                const offer = JSON.parse(atob(code));
+                await peerConnection.setRemoteDescription(offer);
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                // Answer code will appear when ICE gathering completes
+            } catch (e) {
+                console.error('Join code error:', e);
+                alert('Invalid code! Make sure you copied the entire code.');
+            }
+        }
+
+        async function connectWithAnswer() {
+            let code = document.getElementById('answerCodeInput').value;
+            // Remove all whitespace and newlines
+            code = code.replace(/\s/g, '');
+            if (!code) return;
+
+            try {
+                const answer = JSON.parse(atob(code));
+                await peerConnection.setRemoteDescription(answer);
+                // Connection should establish automatically
+            } catch (e) {
+                console.error('Answer code error:', e);
+                alert('Invalid answer code! Make sure you copied the entire code.');
+            }
+        }
+
+        function handleDisconnect() {
+            if (isMultiplayer) {
+                isMultiplayer = false;
+                connectionReady = false;
+                if (gameRunning) {
+                    // Show disconnect message
+                    floatingTexts.push({
+                        x: canvas.width / 2, y: canvas.height / 2,
+                        text: 'PLAYER DISCONNECTED', color: '#f00', life: 180, size: 16
+                    });
+                }
+                if (peerConnection) {
+                    peerConnection.close();
+                    peerConnection = null;
+                }
+                dataChannel = null;
+            }
+        }
+
+        // Receive multiplayer messages
+        function receiveMP(data) {
+            switch (data.type) {
+                case 'nick':
+                    remotePlayer.nickname = data.name;
+                    break;
+                case 'pos':
+                    remotePlayer.x = data.x;
+                    remotePlayer.y = data.y;
+                    remotePlayer.animFrame = data.anim;
+                    remotePlayer.invincible = data.inv || 0;
+                    break;
+                case 'shoot':
+                    // Add remote player's bullet
+                    remotePlayer.bullets.push({
+                        x: data.x, y: data.y,
+                        speed: data.speed || 12,
+                        damage: data.dmg || 1
+                    });
+                    playSound('shoot');
+                    break;
+                case 'state':
+                    remotePlayer.lives = data.lives;
+                    remotePlayer.score = data.score;
+                    remotePlayer.dead = data.dead;
+                    remotePlayer.respawnTimer = data.respawn || 0;
+                    break;
+                case 'start':
+                    // Host started the game
+                    if (!isHost) {
+                        startMultiplayerGame(data.diff);
+                    }
+                    break;
+                case 'enemies':
+                    // Guest receives enemy data from host
+                    if (!isHost) {
+                        syncEnemiesFromHost(data.enemies);
+                    }
+                    break;
+                case 'damage':
+                    // Sync enemy damage
+                    const enemy = enemies.find(e => e.id === data.id);
+                    if (enemy) {
+                        enemy.health -= data.dmg;
+                    }
+                    break;
+                case 'kill':
+                    // Remote player killed an enemy
+                    enemies = enemies.filter(e => e.id !== data.id);
+                    createExplosion(data.x, data.y, true);
+                    playSound('explosion');
+                    break;
+                case 'powerup':
+                    // Host spawned powerup
+                    if (!isHost) {
+                        powerups.push({
+                            x: data.x, y: data.y,
+                            type: data.ptype,
+                            id: data.id
+                        });
+                    }
+                    break;
+                case 'level':
+                    if (!isHost) {
+                        level = data.level;
+                        if (data.biome) switchBiome(data.biome);
+                    }
+                    break;
+            }
+        }
+
+        function syncEnemiesFromHost(enemyData) {
+            // Update enemies from host data
+            enemyData.forEach(ed => {
+                let enemy = enemies.find(e => e.id === ed.id);
+                if (!enemy) {
+                    // Create new enemy
+                    enemy = createEnemy(ed.type);
+                    enemy.id = ed.id;
+                    enemies.push(enemy);
+                }
+                enemy.x = ed.x;
+                enemy.y = ed.y;
+                enemy.health = ed.hp;
+            });
+            // Remove enemies not in host data
+            const hostIds = enemyData.map(e => e.id);
+            enemies = enemies.filter(e => hostIds.includes(e.id));
+        }
+
+        let mpSendTimer = 0;
+        let enemySyncTimer = 0;
+        let enemyIdCounter = 0;
+
+        function updateMultiplayer() {
+            if (!isMultiplayer || !connectionReady) return;
+
+            // Send position every frame
+            sendMP({
+                type: 'pos',
+                x: Math.round(player.x),
+                y: Math.round(player.y),
+                anim: player.animFrame,
+                inv: player.invincible
+            });
+
+            // Send state periodically
+            mpSendTimer++;
+            if (mpSendTimer >= 60) {
+                mpSendTimer = 0;
+                sendMP({
+                    type: 'state',
+                    lives: lives,
+                    score: score,
+                    dead: lives <= 0,
+                    respawn: respawnTimer
+                });
+            }
+
+            // Host syncs enemies
+            if (isHost) {
+                enemySyncTimer++;
+                if (enemySyncTimer >= 6) { // ~10 times per second
+                    enemySyncTimer = 0;
+                    const enemyData = enemies.map(e => ({
+                        id: e.id,
+                        type: e.type,
+                        x: Math.round(e.x),
+                        y: Math.round(e.y),
+                        hp: e.health
+                    }));
+                    sendMP({ type: 'enemies', enemies: enemyData });
+                }
+            }
+
+            // Update remote player bullets
+            remotePlayer.bullets = remotePlayer.bullets.filter(b => {
+                b.x += b.speed;
+                // Check hits on enemies
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    const enemy = enemies[i];
+                    if (b.x > enemy.x && b.x < enemy.x + enemy.width &&
+                        b.y > enemy.y && b.y < enemy.y + enemy.height) {
+                        enemy.health -= b.damage;
+                        if (enemy.health <= 0) {
+                            // Remote player gets the kill
+                            createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, true);
+                            enemies.splice(i, 1);
+                            playSound('explosion');
+                        }
+                        return false;
+                    }
+                }
+                return b.x < canvas.width + 20;
+            });
+
+            // Respawn mechanic
+            if (lives <= 0 && !remotePlayer.dead) {
+                respawnTimer = (respawnTimer || 0) + 1;
+                if (respawnTimer >= 600) { // 10 seconds
+                    lives = 1;
+                    respawnTimer = 0;
+                    player.invincible = 180; // 3 sec invincibility
+                    player.x = 100;
+                    player.y = canvas.height / 2;
+                    floatingTexts.push({
+                        x: player.x, y: player.y - 30,
+                        text: 'RESPAWNED!', color: '#0f0', life: 60, size: 14
+                    });
+                }
+            }
+
+            // Check if both dead = game over
+            if (lives <= 0 && remotePlayer.dead) {
+                gameOver();
+            }
+        }
+
+        let respawnTimer = 0;
+
+        function drawRemotePlayer() {
+            if (!isMultiplayer || !connectionReady) return;
+
+            ctx.save();
+
+            // Draw remote player
+            if (!remotePlayer.dead) {
+                // Flicker if invincible
+                if (remotePlayer.invincible > 0 && frame % 6 < 3) {
+                    ctx.globalAlpha = 0.5;
+                }
+
+                ctx.translate(remotePlayer.x + 32, remotePlayer.y + 16);
+
+                // Different color tint for player 2
+                ctx.fillStyle = '#0ff';
+                ctx.shadowColor = '#0ff';
+                ctx.shadowBlur = 10;
+
+                // Draw helicopter sprite (use same sprite but tinted)
+                ctx.drawImage(sprites.helicopter,
+                    remotePlayer.animFrame * 96, 0, 96, 48,
+                    -32, -16, 64, 32);
+
+                ctx.shadowBlur = 0;
+
+                // Draw nickname above
+                ctx.fillStyle = '#0ff';
+                ctx.font = '8px "Press Start 2P"';
+                ctx.textAlign = 'center';
+                ctx.fillText(remotePlayer.nickname, 0, -25);
+
+                // Draw lives
+                ctx.fillText('♥'.repeat(Math.max(0, remotePlayer.lives)), 0, -15);
+
+                ctx.globalAlpha = 1;
+            } else {
+                // Show respawn timer
+                ctx.fillStyle = '#888';
+                ctx.font = '10px "Press Start 2P"';
+                ctx.textAlign = 'center';
+                const timeLeft = Math.ceil((600 - (remotePlayer.respawnTimer || 0)) / 60);
+                ctx.fillText(remotePlayer.nickname + ' respawning in ' + timeLeft + 's', remotePlayer.x, remotePlayer.y);
+            }
+
+            ctx.restore();
+
+            // Draw remote player bullets
+            ctx.fillStyle = '#0ff';
+            ctx.shadowColor = '#0ff';
+            ctx.shadowBlur = 8;
+            remotePlayer.bullets.forEach(b => {
+                ctx.fillRect(b.x - 6, b.y - 2, 12, 4);
+            });
+            ctx.shadowBlur = 0;
+        }
+
+        function startMultiplayerGame(diff) {
+            isMultiplayer = true;
+            stopMenuMusic();
+            hideAllScreens();
+            startGame(diff);
+        }
+
+        function showHostLobby() {
+            hideAllScreens();
+            document.getElementById('hostLobbyScreen').style.display = 'flex';
+            document.getElementById('connectedPlayer').textContent = remotePlayer.nickname;
+        }
+
+        function showGuestLobby() {
+            hideAllScreens();
+            document.getElementById('guestLobbyScreen').style.display = 'flex';
+            document.getElementById('hostPlayerName').textContent = remotePlayer.nickname;
+        }
+
+        function hostStartGame(diff) {
+            sendMP({ type: 'start', diff: diff });
+            startMultiplayerGame(diff);
+        }
+
+        function hideAllScreens() {
+            ['startScreen', 'multiplayerScreen', 'createRoomScreen', 'joinRoomScreen',
+             'hostLobbyScreen', 'guestLobbyScreen', 'gameOverScreen', 'pauseScreen'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
+
+        function showMultiplayerMenu() {
+            stopMenuMusic();
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('multiplayerScreen').style.display = 'flex';
+            document.getElementById('nicknameInput').value = playerNickname;
+        }
+
+        function saveNickname() {
+            playerNickname = document.getElementById('nicknameInput').value.trim() || 'Player';
+            localStorage.setItem('playerNickname', playerNickname);
+        }
+
+        function showCreateRoom() {
+            saveNickname();
+            document.getElementById('multiplayerScreen').style.display = 'none';
+            document.getElementById('createRoomScreen').style.display = 'flex';
+            document.getElementById('hostCodeBox').style.display = 'none';
+            createRoom();
+        }
+
+        function showJoinRoom() {
+            saveNickname();
+            document.getElementById('multiplayerScreen').style.display = 'none';
+            document.getElementById('joinRoomScreen').style.display = 'flex';
+            document.getElementById('guestCodeBox').style.display = 'none';
+        }
+
+        function copyCode(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                floatingTexts.push({
+                    x: canvas.width/2, y: canvas.height/2,
+                    text: 'COPIED!', color: '#0f0', life: 60, size: 12
+                });
+            });
+        }
+
+        function backToMultiplayerMenu() {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            dataChannel = null;
+            connectionReady = false;
+            hideAllScreens();
+            document.getElementById('multiplayerScreen').style.display = 'flex';
+        }
+
+        function backToMainMenu() {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            dataChannel = null;
+            connectionReady = false;
+            isMultiplayer = false;
+            hideAllScreens();
+            document.getElementById('startScreen').style.display = 'flex';
+        }
+
         // ============ SPRITES ============
         const sprites = { helicopter: new Image(), explosion: new Image() };
         let spritesLoaded = 0;
@@ -797,6 +1654,67 @@
             { id: 'magnet', name: 'MAGNET', cost: 100, icon: '🧲' },
             { id: 'lucky', name: 'LUCKY', cost: 200, icon: '🍀' }
         ];
+
+        // ============ PROGRESSION SYSTEM ============
+        // Player Data
+        let playerData = {
+            xp: 0,
+            level: 1,
+            totalXP: 0,
+            prestigeLevel: 0,
+            prestigeMultiplier: 1
+        };
+        let totalCoins = 0;
+        let purchasedUpgrades = {};
+        let unlockedSkills = {};
+        let prestigeSkins = {};
+
+        const MAX_PLAYER_LEVEL = 15;
+        const XP_TABLE = [0, 100, 250, 500, 800, 1200, 1700, 2300, 3000, 4000, 5200, 6600, 8200, 10000, 12500];
+
+        // Permanent Upgrades
+        const PERMANENT_UPGRADES = {
+            offense_damage: { id: 'offense_damage', name: 'DAMAGE BOOST', icon: '💥', category: 'offense', maxLevel: 10, costBase: 50, costScale: 1.5, effect: (lvl) => ({ damageBonus: lvl * 0.05 }), desc: (lvl) => `+${lvl * 5}% Damage` },
+            offense_firerate: { id: 'offense_firerate', name: 'RAPID FIRE', icon: '⚡', category: 'offense', maxLevel: 10, costBase: 60, costScale: 1.5, effect: (lvl) => ({ fireRateBonus: lvl * 0.08 }), desc: (lvl) => `+${lvl * 8}% Fire Rate` },
+            offense_crit: { id: 'offense_crit', name: 'CRITICAL HITS', icon: '🎯', category: 'offense', maxLevel: 5, costBase: 100, costScale: 2, effect: (lvl) => ({ critChance: lvl * 0.05, critDamage: 1.5 + lvl * 0.1 }), desc: (lvl) => `${lvl * 5}% Crit, ${150 + lvl * 10}% Dmg` },
+            defense_health: { id: 'defense_health', name: 'EXTRA LIVES', icon: '❤️', category: 'defense', maxLevel: 3, costBase: 200, costScale: 2.5, effect: (lvl) => ({ extraLives: lvl }), desc: (lvl) => `+${lvl} Starting Lives` },
+            defense_shield: { id: 'defense_shield', name: 'SHIELD BOOST', icon: '🛡️', category: 'defense', maxLevel: 10, costBase: 40, costScale: 1.4, effect: (lvl) => ({ shieldBonus: lvl * 0.1 }), desc: (lvl) => `+${lvl * 10}% Shield Duration` },
+            defense_armor: { id: 'defense_armor', name: 'ARMOR', icon: '🔰', category: 'defense', maxLevel: 5, costBase: 150, costScale: 1.8, effect: (lvl) => ({ armorFrames: lvl * 10 }), desc: (lvl) => `+${lvl * 10} Invincibility Frames` },
+            utility_magnet: { id: 'utility_magnet', name: 'COIN MAGNET', icon: '🧲', category: 'utility', maxLevel: 10, costBase: 30, costScale: 1.3, effect: (lvl) => ({ magnetRange: 50 + lvl * 20 }), desc: (lvl) => `Magnet: ${50 + lvl * 20}px` },
+            utility_xp: { id: 'utility_xp', name: 'XP BOOST', icon: '📈', category: 'utility', maxLevel: 10, costBase: 80, costScale: 1.6, effect: (lvl) => ({ xpBonus: lvl * 0.1 }), desc: (lvl) => `+${lvl * 10}% XP` },
+            utility_coins: { id: 'utility_coins', name: 'COIN BOOST', icon: '🪙', category: 'utility', maxLevel: 10, costBase: 70, costScale: 1.5, effect: (lvl) => ({ coinBonus: lvl * 0.15 }), desc: (lvl) => `+${lvl * 15}% Coins` },
+            utility_luck: { id: 'utility_luck', name: 'LUCKY DROPS', icon: '🍀', category: 'utility', maxLevel: 5, costBase: 120, costScale: 2, effect: (lvl) => ({ luckBonus: lvl * 0.1 }), desc: (lvl) => `+${lvl * 10}% Powerup Drop` }
+        };
+
+        // Skill Tree
+        const SKILL_TREE = {
+            attack_doubleshot: { id: 'attack_doubleshot', name: 'DOUBLE SHOT', icon: '🔫', branch: 'attack', tier: 1, requiredLevel: 3, requires: [], effect: { doubleShot: true }, desc: 'Fire 2 bullets at once' },
+            attack_explosive: { id: 'attack_explosive', name: 'EXPLOSIVE', icon: '💣', branch: 'attack', tier: 2, requiredLevel: 6, requires: ['attack_doubleshot'], effect: { explosiveRounds: true, explosionRadius: 30 }, desc: 'Bullets explode' },
+            attack_pierce: { id: 'attack_pierce', name: 'PIERCING', icon: '🗡️', branch: 'attack', tier: 2, requiredLevel: 6, requires: ['attack_doubleshot'], effect: { piercingShots: 2 }, desc: 'Pierce 2 enemies' },
+            attack_berserk: { id: 'attack_berserk', name: 'BERSERK', icon: '😈', branch: 'attack', tier: 3, requiredLevel: 10, requires: ['attack_explosive', 'attack_pierce'], effect: { berserkMode: true }, desc: '+50% dmg at 1 HP' },
+            defense_regen: { id: 'defense_regen', name: 'REGEN', icon: '💚', branch: 'defense', tier: 1, requiredLevel: 3, requires: [], effect: { regenRate: 0.0005 }, desc: 'Slowly heal' },
+            defense_reflect: { id: 'defense_reflect', name: 'REFLECT', icon: '🔄', branch: 'defense', tier: 2, requiredLevel: 7, requires: ['defense_regen'], effect: { reflectChance: 0.15 }, desc: '15% bullet reflect' },
+            defense_laststand: { id: 'defense_laststand', name: 'LAST STAND', icon: '⭐', branch: 'defense', tier: 2, requiredLevel: 7, requires: ['defense_regen'], effect: { lastStand: true }, desc: 'Survive fatal hit once' },
+            defense_fortress: { id: 'defense_fortress', name: 'FORTRESS', icon: '🏰', branch: 'defense', tier: 3, requiredLevel: 12, requires: ['defense_reflect', 'defense_laststand'], effect: { fortressStart: true }, desc: '3s invincibility/level' },
+            utility_drone: { id: 'utility_drone', name: 'DRONE', icon: '🤖', branch: 'utility', tier: 1, requiredLevel: 4, requires: [], effect: { startWithDrone: true }, desc: 'Start with drone' },
+            utility_bombs: { id: 'utility_bombs', name: 'BOMB EXPERT', icon: '💣', branch: 'utility', tier: 2, requiredLevel: 8, requires: ['utility_drone'], effect: { extraBombs: 2, bombRadius: 1.5 }, desc: '+2 bombs, +50% radius' },
+            utility_ult: { id: 'utility_ult', name: 'ULT MASTER', icon: '⚡', branch: 'utility', tier: 2, requiredLevel: 8, requires: ['utility_drone'], effect: { ultChargeRate: 1.5 }, desc: '50% faster ult charge' },
+            utility_godlike: { id: 'utility_godlike', name: 'GODLIKE', icon: '👑', branch: 'utility', tier: 3, requiredLevel: 15, requires: ['utility_bombs', 'utility_ult'], effect: { godlike: true }, desc: '+50% powerup duration' }
+        };
+
+        // Prestige Config
+        const PRESTIGE_CONFIG = {
+            minLevel: 10,
+            bonusPerPrestige: 0.1,
+            maxPrestige: 10,
+            skins: {
+                1: { id: 'prestige_bronze', name: 'Bronze Star', colors: ['#cd7f32', '#a0522d', '#8b4513'] },
+                3: { id: 'prestige_silver', name: 'Silver Star', colors: ['#c0c0c0', '#a8a8a8', '#909090'] },
+                5: { id: 'prestige_gold', name: 'Gold Star', colors: ['#ffd700', '#ffb700', '#ff9700'] },
+                7: { id: 'prestige_platinum', name: 'Platinum', colors: ['#e5e4e2', '#d4d4d4', '#c0c0c0'] },
+                10: { id: 'prestige_diamond', name: 'Diamond', colors: ['#b9f2ff', '#87ceeb', '#add8e6'], special: 'sparkle' }
+            }
+        };
 
         // Weather
         let weather = { rain: [], lightning: 0, thunderTimer: 0 };
@@ -970,6 +1888,175 @@
             rainbow:  { name: 'Rainbow',  colors: null, special: 'rainbow', desc: 'Score Legend reward' }
         };
 
+        // ============ PROGRESSION FUNCTIONS ============
+        function loadProgressionData() {
+            try {
+                const saved = localStorage.getItem('chopperPlayerData');
+                if (saved) playerData = JSON.parse(saved);
+
+                const savedUpgrades = localStorage.getItem('chopperPermanentUpgrades');
+                if (savedUpgrades) purchasedUpgrades = JSON.parse(savedUpgrades);
+
+                const savedSkills = localStorage.getItem('chopperSkillTree');
+                if (savedSkills) unlockedSkills = JSON.parse(savedSkills);
+
+                const savedCoins = localStorage.getItem('chopperTotalCoins');
+                if (savedCoins) totalCoins = parseInt(savedCoins, 10);
+
+                const savedPrestigeSkins = localStorage.getItem('chopperPrestigeSkins');
+                if (savedPrestigeSkins) prestigeSkins = JSON.parse(savedPrestigeSkins);
+
+                // Add prestige skins to SKINS
+                Object.values(PRESTIGE_CONFIG.skins).forEach(skin => {
+                    if (prestigeSkins[skin.id]) {
+                        SKINS[skin.id] = skin;
+                        unlockedSkins[skin.id] = true;
+                    }
+                });
+            } catch(e) { console.log('Load progression error:', e); }
+        }
+
+        function saveProgressionData() {
+            try {
+                localStorage.setItem('chopperPlayerData', JSON.stringify(playerData));
+                localStorage.setItem('chopperPermanentUpgrades', JSON.stringify(purchasedUpgrades));
+                localStorage.setItem('chopperSkillTree', JSON.stringify(unlockedSkills));
+                localStorage.setItem('chopperTotalCoins', totalCoins.toString());
+                localStorage.setItem('chopperPrestigeSkins', JSON.stringify(prestigeSkins));
+            } catch(e) { console.log('Save progression error:', e); }
+        }
+
+        // XP Functions
+        function getXPForLevel(level) {
+            if (level <= 1) return 0;
+            if (level > MAX_PLAYER_LEVEL) return XP_TABLE[XP_TABLE.length - 1];
+            return XP_TABLE[level - 1] || XP_TABLE[XP_TABLE.length - 1];
+        }
+
+        function addXP(amount) {
+            const effects = getAllUpgradeEffects();
+            const xpBonus = effects.xpBonus || 0;
+            const totalXPGain = Math.floor(amount * (1 + xpBonus) * playerData.prestigeMultiplier);
+
+            playerData.xp += totalXPGain;
+            playerData.totalXP += totalXPGain;
+
+            while (playerData.level < MAX_PLAYER_LEVEL) {
+                const xpNeeded = getXPForLevel(playerData.level + 1);
+                if (playerData.xp >= xpNeeded) {
+                    playerData.xp -= xpNeeded;
+                    playerData.level++;
+                    onLevelUp();
+                } else break;
+            }
+            saveProgressionData();
+        }
+
+        function onLevelUp() {
+            playSound('powerup');
+            floatingTexts.push({ x: canvas.width / 2, y: canvas.height / 2 - 100, text: `LEVEL ${playerData.level}!`, color: '#0ff', life: 120, size: 24 });
+            const bonusCoins = playerData.level * 25;
+            totalCoins += bonusCoins;
+            floatingTexts.push({ x: canvas.width / 2, y: canvas.height / 2 - 60, text: `+${bonusCoins} COINS`, color: '#fd0', life: 90, size: 16 });
+        }
+
+        // Upgrade Functions
+        function getUpgradeCost(upgradeId) {
+            const upgrade = PERMANENT_UPGRADES[upgradeId];
+            if (!upgrade) return Infinity;
+            const currentLevel = purchasedUpgrades[upgradeId] || 0;
+            if (currentLevel >= upgrade.maxLevel) return Infinity;
+            return Math.floor(upgrade.costBase * Math.pow(upgrade.costScale, currentLevel));
+        }
+
+        function purchaseUpgrade(upgradeId) {
+            const cost = getUpgradeCost(upgradeId);
+            if (totalCoins < cost) return false;
+            const upgrade = PERMANENT_UPGRADES[upgradeId];
+            const currentLevel = purchasedUpgrades[upgradeId] || 0;
+            if (currentLevel >= upgrade.maxLevel) return false;
+            totalCoins -= cost;
+            purchasedUpgrades[upgradeId] = currentLevel + 1;
+            playSound('powerup');
+            saveProgressionData();
+            return true;
+        }
+
+        function getAllUpgradeEffects() {
+            let effects = { damageBonus: 0, fireRateBonus: 0, critChance: 0, critDamage: 1, extraLives: 0, shieldBonus: 0, armorFrames: 0, magnetRange: 50, xpBonus: 0, coinBonus: 0, luckBonus: 0 };
+            Object.entries(purchasedUpgrades).forEach(([id, level]) => {
+                const upgrade = PERMANENT_UPGRADES[id];
+                if (upgrade && level > 0) {
+                    const effect = upgrade.effect(level);
+                    Object.entries(effect).forEach(([key, value]) => {
+                        if (typeof effects[key] === 'number') effects[key] += value;
+                        else effects[key] = value;
+                    });
+                }
+            });
+            effects.damageBonus *= playerData.prestigeMultiplier;
+            effects.fireRateBonus *= playerData.prestigeMultiplier;
+            return effects;
+        }
+
+        // Skill Functions
+        function canUnlockSkill(skillId) {
+            const skill = SKILL_TREE[skillId];
+            if (!skill || unlockedSkills[skillId]) return false;
+            if (playerData.level < skill.requiredLevel) return false;
+            for (const reqId of skill.requires) {
+                if (!unlockedSkills[reqId]) return false;
+            }
+            return true;
+        }
+
+        function unlockSkill(skillId) {
+            if (!canUnlockSkill(skillId)) return false;
+            unlockedSkills[skillId] = true;
+            playSound('powerup');
+            floatingTexts.push({ x: canvas.width / 2, y: canvas.height / 2, text: `SKILL: ${SKILL_TREE[skillId].name}!`, color: '#f0f', life: 120, size: 20 });
+            saveProgressionData();
+            return true;
+        }
+
+        function getAllSkillEffects() {
+            let effects = {};
+            Object.entries(unlockedSkills).forEach(([id, unlocked]) => {
+                if (unlocked && SKILL_TREE[id]) Object.assign(effects, SKILL_TREE[id].effect);
+            });
+            return effects;
+        }
+
+        function hasSkill(skillId) { return unlockedSkills[skillId] === true; }
+
+        // Prestige Functions
+        function canPrestige() {
+            return playerData.level >= PRESTIGE_CONFIG.minLevel && playerData.prestigeLevel < PRESTIGE_CONFIG.maxPrestige;
+        }
+
+        function doPrestige() {
+            if (!canPrestige()) return false;
+            playerData.prestigeLevel++;
+            playerData.prestigeMultiplier = 1 + (playerData.prestigeLevel * PRESTIGE_CONFIG.bonusPerPrestige);
+            playerData.level = 1;
+            playerData.xp = 0;
+            unlockedSkills = {};
+
+            const skinUnlock = PRESTIGE_CONFIG.skins[playerData.prestigeLevel];
+            if (skinUnlock) {
+                prestigeSkins[skinUnlock.id] = true;
+                SKINS[skinUnlock.id] = skinUnlock;
+                unlockedSkins[skinUnlock.id] = true;
+                localStorage.setItem('chopperSkins', JSON.stringify(unlockedSkins));
+            }
+            playSound('combo');
+            saveProgressionData();
+            return true;
+        }
+
+        // Load progression on init
+        loadProgressionData();
+
         const player = {
             x: 100, y: 300,
             width: 64, height: 32,
@@ -1118,6 +2205,7 @@
         // ============ GAME FUNCTIONS ============
         function startGame(diff) {
             initAudio();
+            stopMenuMusic(); // Stop menu music when game starts
             if (spritesLoaded < 2) { setTimeout(() => startGame(diff), 100); return; }
 
             difficulty = diff;
@@ -1192,7 +2280,16 @@
             initBiomeBackground();
             activePowerups = { rapid: 0, spread: 0, shield: 0, timeslow: 0, drone: 0, piercing: 0, homing: 0, ghost: 0 };
             playerDrone = null;
-            gameStats = { droneKills: 0, ghostDodges: 0, collectedPowerups: new Set(), bossHitsTaken: 0, levelStartTime: frame };
+            gameStats = { droneKills: 0, ghostDodges: 0, collectedPowerups: new Set(), bossHitsTaken: 0, levelStartTime: frame, lastStandUsed: false };
+
+            // Apply progression upgrades
+            const progEffects = getAllUpgradeEffects();
+            const skillEffects = getAllSkillEffects();
+            lives += progEffects.extraLives || 0;
+            maxLives += progEffects.extraLives || 0;
+            bombs += skillEffects.extraBombs || 0;
+            if (skillEffects.startWithDrone) activePowerups.drone = 600;
+            if (skillEffects.fortressStart) player.invincible = 180; // 3 seconds
 
             // Reset achievements for new game (can re-earn them!)
             achievements = {};
@@ -1213,6 +2310,7 @@
                 setTimeout(() => spawnBoss(), 1000);
             }
 
+            updateXPBarGame();
             requestAnimationFrame(gameLoop);
         }
 
@@ -1230,11 +2328,19 @@
             document.getElementById('pauseScreen').style.display = 'none';
             document.getElementById('startScreen').style.display = 'flex';
             if (musicPlaying) toggleMusic();
+            // Resume menu music if it was on
+            if (localStorage.getItem('menuMusicOn') === 'true') {
+                playMenuMusic();
+            }
         }
 
         function showMenu() {
             document.getElementById('gameOverScreen').style.display = 'none';
             document.getElementById('startScreen').style.display = 'flex';
+            // Resume menu music if it was on
+            if (localStorage.getItem('menuMusicOn') === 'true') {
+                playMenuMusic();
+            }
         }
 
         function gameOver() {
@@ -1253,6 +2359,12 @@
             if (cfg.endless && frame - gameStats.levelStartTime >= 18000) {
                 unlockAchievement('survivor');
             }
+
+            // PROGRESSION: Transfer coins and add completion XP
+            totalCoins += coins;
+            const completionXP = level * 10 + Math.floor(finalScore / 1000);
+            addXP(completionXP);
+            saveProgressionData();
 
             highScores.push({ score: finalScore, level, difficulty, mode: gameMode });
             highScores.sort((a, b) => b.score - a.score);
@@ -1452,6 +2564,133 @@
             currentSkin = id;
             localStorage.setItem('chopperCurrentSkin', currentSkin);
             showSkinScreen(); // Refresh display
+        }
+
+        // ============ PROGRESSION SCREEN FUNCTIONS ============
+        let currentProgTab = 'upgrades';
+        let currentUpgradeCat = 'offense';
+
+        function showProgressionScreen() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('progressionScreen').style.display = 'flex';
+            updateProgressionHeader();
+            showProgTab('upgrades');
+        }
+
+        function closeProgressionScreen() {
+            document.getElementById('progressionScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'flex';
+        }
+
+        function updateProgressionHeader() {
+            document.getElementById('progLevel').textContent = playerData.level;
+            const xpNeeded = playerData.level >= MAX_PLAYER_LEVEL ? 'MAX' : getXPForLevel(playerData.level + 1);
+            document.getElementById('progXP').textContent = playerData.level >= MAX_PLAYER_LEVEL ? 'MAX' : `${playerData.xp}/${xpNeeded}`;
+            document.getElementById('progCoins').textContent = `${totalCoins} 🪙`;
+            document.getElementById('progPrestige').textContent = playerData.prestigeLevel > 0 ? '⭐'.repeat(playerData.prestigeLevel) : '-';
+        }
+
+        function showProgTab(tab) {
+            currentProgTab = tab;
+            document.querySelectorAll('.prog-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.prog-tab[onclick="showProgTab('${tab}')"]`).classList.add('active');
+            document.getElementById('progUpgradesTab').style.display = tab === 'upgrades' ? 'block' : 'none';
+            document.getElementById('progSkillsTab').style.display = tab === 'skills' ? 'block' : 'none';
+            document.getElementById('progPrestigeTab').style.display = tab === 'prestige' ? 'block' : 'none';
+            if (tab === 'upgrades') renderUpgradeGrid();
+            if (tab === 'skills') renderSkillTree();
+            if (tab === 'prestige') renderPrestigeTab();
+        }
+
+        function showUpgradeCat(cat) {
+            currentUpgradeCat = cat;
+            document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.cat-tab[onclick="showUpgradeCat('${cat}')"]`).classList.add('active');
+            renderUpgradeGrid();
+        }
+
+        function renderUpgradeGrid() {
+            const grid = document.getElementById('upgradeGridPerm');
+            grid.innerHTML = '';
+            Object.values(PERMANENT_UPGRADES).filter(u => u.category === currentUpgradeCat).forEach(upgrade => {
+                const level = purchasedUpgrades[upgrade.id] || 0;
+                const cost = getUpgradeCost(upgrade.id);
+                const canBuy = totalCoins >= cost && level < upgrade.maxLevel;
+                const isMaxed = level >= upgrade.maxLevel;
+                const div = document.createElement('div');
+                div.className = `perm-upgrade ${canBuy ? 'can-buy' : ''} ${isMaxed ? 'maxed' : ''}`;
+                div.innerHTML = `
+                    <span class="upgrade-icon">${upgrade.icon}</span>
+                    <div class="upgrade-info">
+                        <div class="upgrade-name">${upgrade.name}</div>
+                        <div class="upgrade-desc">${upgrade.desc(level)}</div>
+                        <div class="upgrade-lvl">Lv.${level}/${upgrade.maxLevel}</div>
+                    </div>
+                    <span class="upgrade-cost ${!canBuy ? 'disabled' : ''} ${isMaxed ? 'maxed' : ''}">${isMaxed ? 'MAX' : cost + '🪙'}</span>
+                `;
+                if (canBuy) div.onclick = () => { purchaseUpgrade(upgrade.id); updateProgressionHeader(); renderUpgradeGrid(); };
+                grid.appendChild(div);
+            });
+        }
+
+        function renderSkillTree() {
+            ['attack', 'defense', 'utility'].forEach(branch => {
+                const container = document.getElementById('skills' + branch.charAt(0).toUpperCase() + branch.slice(1));
+                container.innerHTML = '';
+                const skills = Object.values(SKILL_TREE).filter(s => s.branch === branch).sort((a, b) => a.tier - b.tier);
+                skills.forEach(skill => {
+                    const unlocked = unlockedSkills[skill.id];
+                    const canUnlock = canUnlockSkill(skill.id);
+                    const div = document.createElement('div');
+                    div.className = `skill-node ${unlocked ? 'unlocked' : ''} ${canUnlock ? 'can-unlock' : ''} ${!unlocked && !canUnlock ? 'locked' : ''}`;
+                    div.innerHTML = `<div class="skill-icon">${skill.icon}</div><div class="skill-name">${skill.name}</div><div class="skill-req">Lv.${skill.requiredLevel}</div>`;
+                    div.title = `${skill.name}\n${skill.desc}\nRequired: Level ${skill.requiredLevel}`;
+                    if (canUnlock) div.onclick = () => { unlockSkill(skill.id); updateProgressionHeader(); renderSkillTree(); };
+                    container.appendChild(div);
+                });
+            });
+        }
+
+        function renderPrestigeTab() {
+            const stars = playerData.prestigeLevel > 0 ? '⭐'.repeat(playerData.prestigeLevel) : '(None)';
+            document.getElementById('prestigeStarsDisplay').textContent = stars;
+            document.getElementById('prestigeBonusDisplay').textContent = `Bonus: +${Math.round(playerData.prestigeLevel * 10)}% All Stats`;
+            const btn = document.getElementById('prestigeBtn');
+            btn.disabled = !canPrestige();
+            btn.textContent = canPrestige() ? '⭐ PRESTIGE NOW' : `⭐ NEED LV.${PRESTIGE_CONFIG.minLevel}`;
+            const skinsList = document.getElementById('prestigeSkinsList');
+            skinsList.innerHTML = '';
+            Object.entries(PRESTIGE_CONFIG.skins).forEach(([lvl, skin]) => {
+                const unlocked = prestigeSkins[skin.id];
+                const span = document.createElement('span');
+                span.className = `prestige-skin ${unlocked ? 'unlocked' : ''}`;
+                span.textContent = `P${lvl}: ${skin.name}`;
+                skinsList.appendChild(span);
+            });
+        }
+
+        function confirmPrestige() {
+            if (!canPrestige()) return;
+            if (confirm(`⭐ PRESTIGE ⭐\n\nYou will gain +${(playerData.prestigeLevel + 1) * 10}% to all stats!\n\nYour level will reset to 1.\nYour upgrades will be KEPT.\n\nContinue?`)) {
+                doPrestige();
+                updateProgressionHeader();
+                renderPrestigeTab();
+                renderSkillTree();
+            }
+        }
+
+        function updateXPBarGame() {
+            const bar = document.getElementById('xpBarGameFill');
+            const text = document.getElementById('xpBarGameText');
+            if (playerData.level >= MAX_PLAYER_LEVEL) {
+                bar.style.width = '100%';
+                text.textContent = `LV.${playerData.level} MAX`;
+            } else {
+                const xpNeeded = getXPForLevel(playerData.level + 1);
+                const progress = (playerData.xp / xpNeeded) * 100;
+                bar.style.width = `${progress}%`;
+                text.textContent = `LV.${playerData.level}`;
+            }
         }
 
         function showUpgradeScreen() {
@@ -1703,6 +2942,7 @@
         function closeShop() {
             document.getElementById('shopScreen').style.display = 'none';
             paused = false;
+            requestAnimationFrame(gameLoop);
         }
 
         // HELICOPTER SELECTION
@@ -1831,24 +3071,27 @@
             gameStats.collectedPowerups.add(p.type);
             if (gameStats.collectedPowerups.size >= 13) unlockAchievement('collector');
 
+            // SKILL: Godlike - 50% longer powerup duration
+            const pwrMult = getAllSkillEffects().godlike ? 1.5 : 1;
+
             switch(p.type) {
-                case 'rapid': activePowerups.rapid = 600; player.shootCooldown = 60; break;
-                case 'spread': activePowerups.spread = 600; break;
-                case 'shield': activePowerups.shield = 600; break;
+                case 'rapid': activePowerups.rapid = 600 * pwrMult; player.shootCooldown = 60; break;
+                case 'spread': activePowerups.spread = 600 * pwrMult; break;
+                case 'shield': activePowerups.shield = 600 * pwrMult * (1 + (getAllUpgradeEffects().shieldBonus || 0)); break;
                 case 'bomb': bombs = Math.min(bombs + 1, 9); break;
                 case 'life': lives = Math.min(lives + 1, 9); break;
                 case 'rocket': rocketAmmo = Math.min(rocketAmmo + 3, 20); break;
                 case 'laser': laserCharge = Math.min(laserCharge + 50, 100); break;
                 // NEW POWERUPS
-                case 'timeslow': activePowerups.timeslow = 480; break;
+                case 'timeslow': activePowerups.timeslow = 480 * pwrMult; break;
                 case 'drone':
-                    activePowerups.drone = 900;
+                    activePowerups.drone = 900 * pwrMult;
                     playerDrone = { x: player.x - 30, y: player.y - 20, lastShot: 0 };
                     break;
-                case 'piercing': activePowerups.piercing = 600; break;
-                case 'homing': activePowerups.homing = 600; break;
+                case 'piercing': activePowerups.piercing = 600 * pwrMult; break;
+                case 'homing': activePowerups.homing = 600 * pwrMult; break;
                 case 'emp': triggerEMP(); break;
-                case 'ghost': activePowerups.ghost = 300; break;
+                case 'ghost': activePowerups.ghost = 300 * pwrMult; break;
             }
             updateUI();
         }
@@ -1963,12 +3206,21 @@
                 splitter_mini: { width: 25, height: 18, speed: 4, health: 1, points: 75, shootCooldown: 2000, glowColor: '#0f8' },
                 healer: { width: 40, height: 35, speed: 1.5, health: 3, points: 500, shootCooldown: 9999, glowColor: '#0f0' },
                 reflector: { width: 45, height: 40, speed: 2, health: 5, points: 450, shootCooldown: 1200, glowColor: '#ccc' },
-                suicide_bomber: { width: 30, height: 30, speed: 5, health: 1, points: 200, shootCooldown: 9999, glowColor: '#f80' }
+                suicide_bomber: { width: 30, height: 30, speed: 5, health: 1, points: 200, shootCooldown: 9999, glowColor: '#f80' },
+                // NEW ADVANCED ENEMIES
+                phantom: { width: 45, height: 40, speed: 2, health: 3, points: 450, shootCooldown: 1500, glowColor: '#a0f' },
+                laserDrone: { width: 35, height: 35, speed: 1.5, health: 2, points: 500, shootCooldown: 9999, glowColor: '#f00' },
+                gravityWell: { width: 50, height: 50, speed: 0.5, health: 6, points: 600, shootCooldown: 9999, glowColor: '#08f' },
+                mirror: { width: 40, height: 60, speed: 1, health: 4, points: 550, shootCooldown: 9999, glowColor: '#fff' },
+                spawner: { width: 70, height: 50, speed: 0.8, health: 8, points: 700, shootCooldown: 9999, glowColor: '#fa0' },
+                bee: { width: 20, height: 15, speed: 5, health: 1, points: 25, shootCooldown: 9999, glowColor: '#ff0' },
+                teslaCoil: { width: 45, height: 55, speed: 1.2, health: 5, points: 650, shootCooldown: 9999, glowColor: '#0ff' }
             };
 
             const p = props[type] || props.fighter;
 
             return {
+                id: ++enemyIdCounter,
                 x: x !== undefined ? x : canvas.width + 50,
                 y: y !== undefined ? y : (isGround ? canvas.height - 100 : Math.random() * (canvas.height - 300) + 100),
                 width: p.width,
@@ -1994,7 +3246,18 @@
                 cloaked: false,
                 cloakTimer: 0,
                 dodgeCooldown: 0,
-                afterImages: []
+                afterImages: [],
+                // NEW ENEMY PROPERTIES
+                phantomPhase: type === 'phantom' ? 0 : 0,
+                phantomVisible: true,
+                laserCharging: 0,
+                laserFiring: 0,
+                mirrorOpen: false,
+                mirrorTimer: type === 'mirror' ? 180 : 0,
+                spawnTimer: type === 'spawner' ? 180 : 0,
+                parentId: null,
+                teslaTimer: type === 'teslaCoil' ? 90 : 0,
+                charged: false
             };
         }
 
@@ -2035,6 +3298,14 @@
             if (level >= 11) available.push('healer');
             if (level >= 13) available.push('reflector');
             if (level >= 15) available.push('suicide_bomber');
+
+            // ADVANCED ENEMIES
+            if (level >= 12) available.push('phantom');
+            if (level >= 14) available.push('laserDrone');
+            if (level >= 16) available.push('gravityWell');
+            if (level >= 17) available.push('mirror');
+            if (level >= 18) available.push('spawner');
+            if (level >= 19) available.push('teslaCoil');
 
             const type = available[Math.floor(Math.random() * available.length)];
             const enemy = createEnemy(type);
@@ -2730,7 +4001,22 @@
                 blinker: { body: '#2cc', dark: '#1aa', cockpit: '#8ff', accent: '#fff' },
                 shielder: { body: '#22c', dark: '#119', cockpit: '#88f', accent: '#0ff' },
                 miner: { body: '#2a2', dark: '#181', cockpit: '#8f8', accent: '#ff0' },
-                scout: { body: '#cc2', dark: '#991', cockpit: '#ff8', accent: '#fff' }
+                scout: { body: '#cc2', dark: '#991', cockpit: '#ff8', accent: '#fff' },
+                // MEGA ENEMIES
+                teleporter: { body: '#808', dark: '#505', cockpit: '#f0f', accent: '#fff' },
+                splitter: { body: '#0a8', dark: '#064', cockpit: '#0ff', accent: '#fff' },
+                splitter_mini: { body: '#0a8', dark: '#064', cockpit: '#0ff', accent: '#fff' },
+                healer: { body: '#0a0', dark: '#060', cockpit: '#0f0', accent: '#fff' },
+                reflector: { body: '#888', dark: '#555', cockpit: '#ccc', accent: '#fff' },
+                suicide_bomber: { body: '#f60', dark: '#a40', cockpit: '#ff0', accent: '#f00' },
+                // ADVANCED ENEMIES
+                phantom: { body: '#a080ff', dark: '#6040a0', cockpit: '#ff4040', accent: '#fff' },
+                laserDrone: { body: '#400', dark: '#200', cockpit: '#f00', accent: '#ff0' },
+                gravityWell: { body: '#004', dark: '#002', cockpit: '#08f', accent: '#fff' },
+                mirror: { body: '#ddd', dark: '#aaa', cockpit: '#fff', accent: '#0ff' },
+                spawner: { body: '#a80', dark: '#640', cockpit: '#ff0', accent: '#fff' },
+                bee: { body: '#fc0', dark: '#420', cockpit: '#ff0', accent: '#000' },
+                teslaCoil: { body: '#068', dark: '#024', cockpit: '#0ff', accent: '#fff' }
             };
             const c = colors[type] || colors.fighter;
 
@@ -2786,6 +4072,267 @@
                     ctx.fillRect(-w*0.1, -h*0.5, w*0.2, h*0.3);
                     ctx.restore();
                 }
+            } else if (type === 'phantom') {
+                // PHANTOM - Ghost with wavy edges
+                const alpha = enemy && !enemy.phantomVisible ? 0.2 : 0.7;
+                ctx.globalAlpha *= alpha;
+
+                // Ghostly body with wavy effect
+                ctx.fillStyle = c.body;
+                ctx.beginPath();
+                ctx.moveTo(x + w*0.2, y + h*0.1);
+                ctx.quadraticCurveTo(x + w*0.5, y - h*0.1, x + w*0.8, y + h*0.1);
+                ctx.lineTo(x + w*0.85, y + h*0.6);
+                // Wavy bottom
+                for (let i = 0; i < 4; i++) {
+                    const wx = x + w*0.85 - (w*0.7/4) * i;
+                    const wy = y + h*0.8 + Math.sin(frame*0.1 + i) * h*0.1;
+                    ctx.lineTo(wx, wy);
+                }
+                ctx.lineTo(x + w*0.15, y + h*0.6);
+                ctx.closePath();
+                ctx.fill();
+
+                // Glowing eyes
+                ctx.fillStyle = c.cockpit;
+                ctx.shadowColor = '#f00';
+                ctx.shadowBlur = 10;
+                ctx.fillRect(x + w*0.3, y + h*0.25, w*0.15, h*0.12);
+                ctx.fillRect(x + w*0.55, y + h*0.25, w*0.15, h*0.12);
+                ctx.shadowBlur = 0;
+
+            } else if (type === 'laserDrone') {
+                // LASER DRONE - Circular with big red eye
+                const charging = enemy && enemy.laserCharging > 0;
+
+                // Outer ring
+                ctx.fillStyle = c.dark;
+                ctx.beginPath();
+                ctx.arc(x + w/2, y + h/2, w*0.45, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner body
+                ctx.fillStyle = c.body;
+                ctx.beginPath();
+                ctx.arc(x + w/2, y + h/2, w*0.35, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Central eye - pulsing when charging
+                const eyeSize = charging ? w*0.25 + Math.sin(frame*0.3)*w*0.05 : w*0.2;
+                ctx.fillStyle = c.cockpit;
+                ctx.shadowColor = '#f00';
+                ctx.shadowBlur = charging ? 20 : 5;
+                ctx.beginPath();
+                ctx.arc(x + w/2, y + h/2, eyeSize, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Eye pupil
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(x + w/2, y + h/2, eyeSize*0.4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+            } else if (type === 'gravityWell') {
+                // GRAVITY WELL - Black hole with accretion disk
+                const cx = x + w/2, cy = y + h/2;
+
+                // Outer glow/accretion disk
+                for (let i = 3; i >= 0; i--) {
+                    const alpha = 0.3 - i*0.05;
+                    ctx.fillStyle = `rgba(0, 128, 255, ${alpha})`;
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, w*0.5 - i*3, h*0.25 - i*2, frame*0.02, 0, Math.PI*2);
+                    ctx.fill();
+                }
+
+                // Event horizon (black center)
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(cx, cy, w*0.25, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Spinning particles
+                ctx.fillStyle = c.cockpit;
+                for (let i = 0; i < 6; i++) {
+                    const angle = frame*0.05 + i*Math.PI/3;
+                    const dist = w*0.35;
+                    const px = cx + Math.cos(angle) * dist;
+                    const py = cy + Math.sin(angle) * dist * 0.5;
+                    ctx.beginPath();
+                    ctx.arc(px, py, 2, 0, Math.PI*2);
+                    ctx.fill();
+                }
+
+            } else if (type === 'mirror') {
+                // MIRROR - Vertical reflective panel
+                const isOpen = enemy && enemy.mirrorOpen;
+                const flashPhase = enemy && enemy.mirrorTimer < 30;
+
+                // Frame
+                ctx.fillStyle = c.dark;
+                ctx.fillRect(x + w*0.2, y, w*0.6, h);
+
+                // Reflective surface with gradient
+                const grad = ctx.createLinearGradient(x, y, x + w, y);
+                grad.addColorStop(0, '#666');
+                grad.addColorStop(0.3, '#fff');
+                grad.addColorStop(0.5, '#ddd');
+                grad.addColorStop(0.7, '#fff');
+                grad.addColorStop(1, '#888');
+
+                ctx.fillStyle = isOpen ? '#444' : grad;
+                ctx.fillRect(x + w*0.25, y + h*0.05, w*0.5, h*0.9);
+
+                // Flashing warning before opening
+                if (flashPhase && frame % 10 < 5) {
+                    ctx.fillStyle = 'rgba(255,255,0,0.5)';
+                    ctx.fillRect(x + w*0.25, y + h*0.05, w*0.5, h*0.9);
+                }
+
+                // Sparkles on surface
+                if (!isOpen) {
+                    ctx.fillStyle = '#fff';
+                    for (let i = 0; i < 3; i++) {
+                        const sx = x + w*0.3 + Math.sin(frame*0.1 + i*2) * w*0.2;
+                        const sy = y + h*0.2 + i*h*0.25;
+                        ctx.fillRect(sx, sy, 3, 3);
+                    }
+                }
+
+            } else if (type === 'spawner') {
+                // SPAWNER - Hexagonal hive
+                const cx = x + w/2, cy = y + h/2;
+
+                // Outer hexagon
+                ctx.fillStyle = c.body;
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = i * Math.PI / 3 - Math.PI/6;
+                    const px = cx + Math.cos(angle) * w*0.45;
+                    const py = cy + Math.sin(angle) * h*0.45;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.fill();
+
+                // Honeycomb pattern inside
+                ctx.strokeStyle = c.dark;
+                ctx.lineWidth = 2;
+                const cellSize = w * 0.12;
+                for (let row = -1; row <= 1; row++) {
+                    for (let col = -1; col <= 1; col++) {
+                        const hx = cx + col * cellSize * 1.5;
+                        const hy = cy + row * cellSize * 1.3 + (col % 2) * cellSize * 0.65;
+                        ctx.beginPath();
+                        for (let i = 0; i < 6; i++) {
+                            const a = i * Math.PI / 3;
+                            const px = hx + Math.cos(a) * cellSize * 0.5;
+                            const py = hy + Math.sin(a) * cellSize * 0.5;
+                            if (i === 0) ctx.moveTo(px, py);
+                            else ctx.lineTo(px, py);
+                        }
+                        ctx.closePath();
+                        ctx.stroke();
+                    }
+                }
+
+                // Central opening (yellow glow)
+                ctx.fillStyle = c.cockpit;
+                ctx.shadowColor = '#ff0';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(cx, cy, w*0.1, 0, Math.PI*2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+            } else if (type === 'bee') {
+                // BEE - Small yellow-black striped
+                const cx = x + w/2, cy = y + h/2;
+
+                // Body (oval)
+                ctx.fillStyle = c.body;
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, w*0.4, h*0.35, 0, 0, Math.PI*2);
+                ctx.fill();
+
+                // Black stripes
+                ctx.fillStyle = c.accent;
+                ctx.fillRect(x + w*0.35, y + h*0.25, w*0.1, h*0.5);
+                ctx.fillRect(x + w*0.55, y + h*0.25, w*0.1, h*0.5);
+
+                // Wings (animated)
+                ctx.fillStyle = 'rgba(200,200,255,0.6)';
+                const wingAngle = Math.sin(frame * 0.8) * 0.3;
+                ctx.save();
+                ctx.translate(cx, cy - h*0.2);
+                ctx.rotate(wingAngle);
+                ctx.beginPath();
+                ctx.ellipse(0, -h*0.15, w*0.2, h*0.1, 0, 0, Math.PI*2);
+                ctx.fill();
+                ctx.restore();
+                ctx.save();
+                ctx.translate(cx, cy - h*0.2);
+                ctx.rotate(-wingAngle);
+                ctx.beginPath();
+                ctx.ellipse(0, -h*0.15, w*0.2, h*0.1, 0, 0, Math.PI*2);
+                ctx.fill();
+                ctx.restore();
+
+                // Head
+                ctx.fillStyle = c.dark;
+                ctx.beginPath();
+                ctx.arc(x + w*0.2, cy, w*0.15, 0, Math.PI*2);
+                ctx.fill();
+
+            } else if (type === 'teslaCoil') {
+                // TESLA COIL - Vertical coil with spheres
+                const cx = x + w/2, cy = y + h/2;
+
+                // Base
+                ctx.fillStyle = c.dark;
+                ctx.fillRect(x + w*0.2, y + h*0.75, w*0.6, h*0.25);
+
+                // Coil body
+                ctx.fillStyle = c.body;
+                ctx.fillRect(x + w*0.35, y + h*0.2, w*0.3, h*0.6);
+
+                // Coil windings
+                ctx.strokeStyle = '#0ff';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 8; i++) {
+                    const yy = y + h*0.25 + i * h*0.065;
+                    ctx.beginPath();
+                    ctx.moveTo(x + w*0.3, yy);
+                    ctx.lineTo(x + w*0.7, yy);
+                    ctx.stroke();
+                }
+
+                // Top sphere
+                ctx.fillStyle = c.cockpit;
+                ctx.shadowColor = '#0ff';
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(cx, y + h*0.12, w*0.18, 0, Math.PI*2);
+                ctx.fill();
+
+                // Electric arcs between spheres
+                if (frame % 5 < 3) {
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(cx - w*0.1, y + h*0.2);
+                    ctx.lineTo(cx - w*0.15 + Math.random()*w*0.1, y + h*0.35);
+                    ctx.lineTo(cx - w*0.05 + Math.random()*w*0.1, y + h*0.5);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(cx + w*0.1, y + h*0.2);
+                    ctx.lineTo(cx + w*0.05 + Math.random()*w*0.1, y + h*0.4);
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+
             } else {
                 // Standard planes
                 ctx.fillStyle = c.body;
@@ -3249,10 +4796,19 @@
 
             // Shooting
             const shooting = keys['Space'] || touchFire;
-            const cooldownMod = 1 - perks.fireRate * 0.15;
-            if (shooting && Date.now() - player.lastShot > player.shootCooldown * cooldownMod) {
+            const progUpgrades = getAllUpgradeEffects();
+            const progSkills = getAllSkillEffects();
+            const fireRateMod = (1 - perks.fireRate * 0.15) * (1 - (progUpgrades.fireRateBonus || 0));
+            if (shooting && Date.now() - player.lastShot > player.shootCooldown * fireRateMod) {
                 const bulletY = player.y + player.height / 2 - 3;
-                const damage = 1 + perks.damage * 0.25;
+                let damage = (1 + perks.damage * 0.25) * (1 + (progUpgrades.damageBonus || 0));
+                // Berserk mode: +50% damage at 1 HP
+                if (progSkills.berserkMode && lives === 1) damage *= 1.5;
+                // Critical hit chance
+                if (Math.random() < (progUpgrades.critChance || 0)) {
+                    damage *= (progUpgrades.critDamage || 1.5);
+                    floatingTexts.push({ x: player.x + player.width, y: player.y, text: 'CRIT!', color: '#ff0', life: 20, size: 12 });
+                }
 
                 if (currentWeapon === 'laser') {
                     // Laser weapon - activate laser beam
@@ -3277,12 +4833,22 @@
                     }
                     player.lastShot = Date.now();
                     playSound('shoot');
+                    if (isMultiplayer && connectionReady) {
+                        sendMP({ type: 'shoot', x: player.x + player.width, y: bulletY, dmg: damage });
+                    }
                 } else {
                     // Normal weapon
                     player.bullets.push({
                         x: player.x + player.width, y: bulletY,
                         width: 20, height: 6, speed: 14, vy: 0, damage
                     });
+                    // SKILL: Double Shot
+                    if (progSkills.doubleShot) {
+                        player.bullets.push({
+                            x: player.x + player.width, y: bulletY + 10,
+                            width: 20, height: 6, speed: 14, vy: 0.3, damage
+                        });
+                    }
                     // Double shot at high combo
                     if (combo >= 15) {
                         player.bullets.push({
@@ -3296,6 +4862,10 @@
                     }
                     player.lastShot = Date.now();
                     playSound('shoot');
+                    // Multiplayer: send shoot event
+                    if (isMultiplayer && connectionReady) {
+                        sendMP({ type: 'shoot', x: player.x + player.width, y: bulletY, dmg: damage });
+                    }
                 }
             }
 
@@ -4064,6 +5634,141 @@
                         if (lives <= 0) gameOver();
                         return false;
                     }
+                // === ADVANCED ENEMIES ===
+                } else if (enemy.type === 'phantom') {
+                    enemy.x -= enemy.speed * enemySpeedMod;
+                    enemy.phantomPhase = (enemy.phantomPhase || 0) + 1;
+                    // Toggle visibility every 120 frames
+                    if (enemy.phantomPhase >= 120) {
+                        enemy.phantomPhase = 0;
+                        enemy.phantomVisible = !enemy.phantomVisible;
+                        // Phase effect particles
+                        for (let i = 0; i < 10; i++) {
+                            particles.push({
+                                x: enemy.x + enemy.width/2, y: enemy.y + enemy.height/2,
+                                vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
+                                life: 25, color: '#a0f', size: 4
+                            });
+                        }
+                    }
+                    // Floaty movement
+                    enemy.y += Math.sin(frame * 0.04) * 1.5 * enemySpeedMod;
+                } else if (enemy.type === 'laserDrone') {
+                    // Slow horizontal, then stop to charge
+                    if (enemy.laserCharging === 0 && enemy.laserFiring === 0) {
+                        enemy.x -= enemy.speed * enemySpeedMod;
+                        // Start charging when in position
+                        if (enemy.x < canvas.width - 150 && Math.random() < 0.01) {
+                            enemy.laserCharging = 90;
+                            enemy.laserTargetY = player.y + player.height/2;
+                        }
+                    } else if (enemy.laserCharging > 0) {
+                        enemy.laserCharging--;
+                        // Fire when charged
+                        if (enemy.laserCharging === 0) {
+                            enemy.laserFiring = 30;
+                        }
+                    } else if (enemy.laserFiring > 0) {
+                        enemy.laserFiring--;
+                    }
+                } else if (enemy.type === 'gravityWell') {
+                    enemy.x -= enemy.speed * enemySpeedMod;
+                    // Attract player bullets
+                    player.bullets.forEach(b => {
+                        const dx = (enemy.x + enemy.width/2) - b.x;
+                        const dy = (enemy.y + enemy.height/2) - b.y;
+                        const dist = Math.hypot(dx, dy);
+                        if (dist < 180 && dist > 20) {
+                            b.vy = (b.vy || 0) + (dy / dist) * 0.5;
+                            b.speed *= 0.99;
+                        }
+                    });
+                    // Attract powerups
+                    powerups.forEach(p => {
+                        const dx = (enemy.x + enemy.width/2) - p.x;
+                        const dy = (enemy.y + enemy.height/2) - p.y;
+                        const dist = Math.hypot(dx, dy);
+                        if (dist < 200 && dist > 30) {
+                            p.x += (dx / dist) * 2;
+                            p.y += (dy / dist) * 2;
+                        }
+                    });
+                } else if (enemy.type === 'mirror') {
+                    enemy.x -= enemy.speed * enemySpeedMod;
+                    enemy.mirrorTimer = (enemy.mirrorTimer || 180) - 1;
+                    if (enemy.mirrorTimer <= 0) {
+                        enemy.mirrorOpen = !enemy.mirrorOpen;
+                        enemy.mirrorTimer = enemy.mirrorOpen ? 45 : 180; // Open for shorter time
+                    }
+                    enemy.y += Math.sin(frame * 0.02) * 1.5 * enemySpeedMod;
+                } else if (enemy.type === 'spawner') {
+                    enemy.x -= enemy.speed * enemySpeedMod;
+                    enemy.spawnTimer = (enemy.spawnTimer || 180) - 1;
+                    // Count active bees from this spawner
+                    const myBees = enemies.filter(e => e.parentId === enemy.id).length;
+                    if (enemy.spawnTimer <= 0 && myBees < 4) {
+                        // Spawn a bee
+                        const bee = createEnemy('bee');
+                        bee.x = enemy.x - 10;
+                        bee.y = enemy.y + enemy.height/2;
+                        bee.parentId = enemy.id;
+                        enemies.push(bee);
+                        enemy.spawnTimer = 150;
+                        // Spawn effect
+                        for (let i = 0; i < 6; i++) {
+                            particles.push({
+                                x: bee.x, y: bee.y,
+                                vx: -2 - Math.random() * 3, vy: (Math.random() - 0.5) * 4,
+                                life: 20, color: '#ff0', size: 3
+                            });
+                        }
+                    }
+                } else if (enemy.type === 'bee') {
+                    // Zigzag aggressive movement
+                    const dx = player.x - enemy.x;
+                    const dy = player.y + player.height/2 - (enemy.y + enemy.height/2);
+                    const dist = Math.hypot(dx, dy);
+                    enemy.x += (dx / dist) * enemy.speed * enemySpeedMod * 0.6;
+                    enemy.y += (dy / dist) * enemy.speed * enemySpeedMod * 0.8;
+                    enemy.y += Math.sin(frame * 0.3 + enemy.x * 0.05) * 3 * enemySpeedMod;
+                } else if (enemy.type === 'teslaCoil') {
+                    enemy.x -= enemy.speed * enemySpeedMod;
+                    enemy.teslaTimer = (enemy.teslaTimer || 90) - 1;
+                    if (enemy.teslaTimer <= 0) {
+                        // Find nearby enemy to charge, or shoot player
+                        let target = null;
+                        let minDist = 250;
+                        enemies.forEach(e => {
+                            if (e !== enemy && e.type !== 'teslaCoil' && e.type !== 'bee') {
+                                const dist = Math.hypot(e.x - enemy.x, e.y - enemy.y);
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    target = e;
+                                }
+                            }
+                        });
+                        if (target) {
+                            target.charged = true;
+                            // Lightning effect
+                            for (let i = 0; i < 8; i++) {
+                                const t = i / 8;
+                                particles.push({
+                                    x: enemy.x + (target.x - enemy.x) * t + (Math.random()-0.5)*15,
+                                    y: enemy.y + (target.y - enemy.y) * t + (Math.random()-0.5)*15,
+                                    vx: 0, vy: 0, life: 15, color: '#0ff', size: 4
+                                });
+                            }
+                        } else {
+                            // Shoot lightning at player
+                            const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+                            enemy.bullets.push({
+                                x: enemy.x, y: enemy.y + enemy.height/4,
+                                width: 15, height: 6, speed: 12, angle,
+                                isLightning: true
+                            });
+                        }
+                        enemy.teslaTimer = 75;
+                    }
                 } else {
                     enemy.x -= enemy.speed * enemySpeedMod;
                 }
@@ -4167,6 +5872,28 @@
                         }
                     }
 
+                    // ADVANCED ENEMY: Phantom is immune when invisible
+                    if (enemy.type === 'phantom' && !enemy.phantomVisible) {
+                        continue; // Bullet passes through
+                    }
+
+                    // ADVANCED ENEMY: Mirror reflects ALL bullets when closed
+                    if (enemy.type === 'mirror' && !enemy.mirrorOpen && checkCollision(bullet, enemy)) {
+                        bullet.speed = -bullet.speed * 1.2; // Faster reflect
+                        bullet.isReflected = true;
+                        bullet.color = '#fff';
+                        // Sparkle effect
+                        for (let r = 0; r < 8; r++) {
+                            particles.push({
+                                x: bullet.x, y: bullet.y,
+                                vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
+                                life: 20, color: '#fff', size: 3
+                            });
+                        }
+                        playSound('hit');
+                        continue;
+                    }
+
                     if (checkCollision(bullet, enemy)) {
                         // MEGA UPGRADE: Reflector has 50% chance to reflect bullets
                         if (enemy.type === 'reflector' && !bullet.isReflected && Math.random() < 0.5) {
@@ -4200,11 +5927,19 @@
                             score += pts;
                             addCombo();
 
+                            // PROGRESSION: Add XP
+                            const xpGain = Math.floor((enemy.points || 100) / 10);
+                            addXP(xpGain);
+                            updateXPBarGame();
+
                             // MEGA UPGRADE: Coins and Ultimate charge
-                            const coinDrop = 1 + Math.floor(Math.random() * 5 * (1 + luckBonus));
+                            const progEff = getAllUpgradeEffects();
+                            const coinMult = 1 + (progEff.coinBonus || 0);
+                            const coinDrop = Math.floor((1 + Math.random() * 5 * (1 + luckBonus + (progEff.luckBonus || 0))) * coinMult);
                             coins += coinDrop;
                             totalKills++;
-                            ultCharge = Math.min(100, ultCharge + 1 + (comboMultiplier - 1) * 0.5);
+                            const ultChargeRate = getAllSkillEffects().ultChargeRate || 1;
+                            ultCharge = Math.min(100, ultCharge + (1 + (comboMultiplier - 1) * 0.5) * ultChargeRate);
 
                             // Vampire helicopter: chance to heal on kill
                             if (HELICOPTERS[currentHelicopter].special === 'lifesteal' && Math.random() < 0.05) {
@@ -4243,6 +5978,20 @@
                                 floatingTexts.push({
                                     x: enemy.x, y: enemy.y - 10,
                                     text: 'SPLIT!', color: '#0f8', life: 30, size: 12
+                                });
+                            }
+
+                            // ADVANCED: Spawner death kills all its bees
+                            if (enemy.type === 'spawner') {
+                                enemies.forEach(e => {
+                                    if (e.parentId === enemy.id) {
+                                        e.health = 0;
+                                        createExplosion(e.x, e.y, false);
+                                    }
+                                });
+                                floatingTexts.push({
+                                    x: enemy.x, y: enemy.y - 10,
+                                    text: 'HIVE DESTROYED!', color: '#fa0', life: 40, size: 12
                                 });
                             }
 
@@ -4391,6 +6140,9 @@
                     if (r.x < 0) r.x = canvas.width;
                 });
             }
+
+            // Multiplayer sync
+            updateMultiplayer();
         }
 
         // ============ DRAW ============
@@ -4801,6 +6553,9 @@
                 ctx.restore();
             }
 
+            // Draw remote player (multiplayer)
+            drawRemotePlayer();
+
             // Laser beam - PULSATING NEON
             if (laserActive) {
                 const laserY = player.y + player.height / 2;
@@ -4940,7 +6695,7 @@
 
             // Enemies
             enemies.forEach(enemy => {
-                drawPixelPlane(enemy.x, enemy.y, enemy.width, enemy.height, enemy.type, enemy.health < enemy.maxHealth, enemy.glowColor);
+                drawPixelPlane(enemy.x, enemy.y, enemy.width, enemy.height, enemy.type, enemy.health < enemy.maxHealth, enemy.glowColor, enemy);
 
                 // Health bar for multi-hit enemies
                 if (enemy.maxHealth > 1) {
@@ -5007,12 +6762,105 @@
                     ctx.globalAlpha = 1;
                 }
 
+                // === ADVANCED ENEMY EFFECTS ===
+
+                // Laser Drone - charging indicator and laser beam
+                if (enemy.type === 'laserDrone') {
+                    if (enemy.laserCharging > 0) {
+                        // Charging indicator - pulsing red line
+                        ctx.strokeStyle = `rgba(255, 0, 0, ${0.3 + Math.sin(frame * 0.5) * 0.2})`;
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(enemy.x, enemy.laserTargetY);
+                        ctx.lineTo(0, enemy.laserTargetY);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                    if (enemy.laserFiring > 0) {
+                        // FIRE THE LASER!
+                        const laserY = enemy.laserTargetY;
+                        const laserWidth = 15 + Math.sin(frame * 0.8) * 5;
+
+                        // White core
+                        ctx.fillStyle = '#fff';
+                        ctx.shadowColor = '#f00';
+                        ctx.shadowBlur = 30;
+                        ctx.fillRect(0, laserY - laserWidth/3, enemy.x, laserWidth/1.5);
+
+                        // Red outer glow
+                        ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+                        ctx.fillRect(0, laserY - laserWidth, enemy.x, laserWidth * 2);
+                        ctx.shadowBlur = 0;
+
+                        // Damage player if hit
+                        if (player.invincible === 0 && activePowerups.shield === 0) {
+                            const playerMidY = player.y + player.height/2;
+                            if (Math.abs(playerMidY - laserY) < laserWidth + 15) {
+                                lives--;
+                                player.invincible = 90;
+                                screenShake = 20;
+                                updateUI();
+                                if (lives <= 0) gameOver();
+                            }
+                        }
+                    }
+                }
+
+                // Gravity Well - distortion effect
+                if (enemy.type === 'gravityWell') {
+                    // Draw gravity field indicator
+                    ctx.strokeStyle = 'rgba(0, 128, 255, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(enemy.x + enemy.width/2, enemy.y + enemy.height/2, 150, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // Inner spinning ring
+                    ctx.strokeStyle = 'rgba(0, 200, 255, 0.5)';
+                    ctx.beginPath();
+                    ctx.arc(enemy.x + enemy.width/2, enemy.y + enemy.height/2, 80, frame * 0.05, frame * 0.05 + Math.PI);
+                    ctx.stroke();
+                }
+
+                // Tesla charged enemy effect
+                if (enemy.charged) {
+                    ctx.strokeStyle = '#0ff';
+                    ctx.shadowColor = '#0ff';
+                    ctx.shadowBlur = 15;
+                    ctx.lineWidth = 2;
+                    // Electric arcs around enemy
+                    for (let i = 0; i < 4; i++) {
+                        const angle = frame * 0.2 + i * Math.PI / 2;
+                        const ex = enemy.x + enemy.width/2 + Math.cos(angle) * (enemy.width * 0.6);
+                        const ey = enemy.y + enemy.height/2 + Math.sin(angle) * (enemy.height * 0.6);
+                        ctx.beginPath();
+                        ctx.moveTo(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
+                        ctx.lineTo(ex + (Math.random() - 0.5) * 10, ey + (Math.random() - 0.5) * 10);
+                        ctx.stroke();
+                    }
+                    ctx.shadowBlur = 0;
+                }
+
                 // Enemy bullets
                 enemy.bullets.forEach(b => {
-                    ctx.fillStyle = '#f44';
-                    ctx.shadowColor = '#f44';
-                    ctx.shadowBlur = 6;
-                    ctx.fillRect(b.x - b.width/2, b.y - b.height/2, b.width, b.height);
+                    if (b.isLightning) {
+                        // Lightning bolt
+                        ctx.strokeStyle = '#0ff';
+                        ctx.shadowColor = '#0ff';
+                        ctx.shadowBlur = 15;
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.moveTo(b.x, b.y);
+                        for (let i = 0; i < 5; i++) {
+                            ctx.lineTo(b.x - 10 - i * 8, b.y + (Math.random() - 0.5) * 20);
+                        }
+                        ctx.stroke();
+                    } else {
+                        ctx.fillStyle = '#f44';
+                        ctx.shadowColor = '#f44';
+                        ctx.shadowBlur = 6;
+                        ctx.fillRect(b.x - b.width/2, b.y - b.height/2, b.width, b.height);
+                    }
                 });
             });
             ctx.shadowBlur = 0;
