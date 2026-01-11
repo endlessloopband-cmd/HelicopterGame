@@ -1880,7 +1880,6 @@
         }
 
         function showMultiplayerMenu() {
-            stopMenuMusic();
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('multiplayerScreen').style.display = 'flex';
             document.getElementById('nicknameInput').value = playerNickname;
@@ -2642,7 +2641,7 @@
             initBiomeBackground();
             activePowerups = { rapid: 0, spread: 0, shield: 0, timeslow: 0, drone: 0, piercing: 0, homing: 0, ghost: 0 };
             playerDrone = null;
-            gameStats = { droneKills: 0, ghostDodges: 0, collectedPowerups: new Set(), bossHitsTaken: 0, levelStartTime: frame, lastStandUsed: false };
+            gameStats = { droneKills: 0, ghostDodges: 0, collectedPowerups: new Set(), bossHitsTaken: 0, levelStartTime: frame, lastStandUsed: false, regenAccumulator: 0 };
 
             // Apply progression upgrades
             const progEffects = getAllUpgradeEffects();
@@ -3494,6 +3493,49 @@
             }
         }
 
+        // Unified damage function with all upgrade effects
+        function takeDamage(damageAmount = 1) {
+            if (player.invincible > 0 || activePowerups.shield > 0 || activePowerups.ghost > 0) {
+                return false; // No damage taken
+            }
+
+            const progUpgrades = getAllUpgradeEffects();
+            const progSkills = getAllSkillEffects();
+
+            // LAST STAND: Survive fatal hit once per game
+            if (lives - damageAmount <= 0 && progSkills.lastStand && !gameStats.lastStandUsed) {
+                gameStats.lastStandUsed = true;
+                lives = 1;
+                player.invincible = 180; // 3 seconds invincibility
+                screenShake = 30;
+                floatingTexts.push({
+                    x: player.x + player.width/2, y: player.y - 40,
+                    text: '⭐ LAST STAND! ⭐', color: '#fd0', life: 90, size: 18
+                });
+                playSound('powerup');
+                createExplosion(player.x + player.width/2, player.y + player.height/2, true);
+                updateUI();
+                return true; // Damage was "taken" but survived
+            }
+
+            lives -= damageAmount;
+
+            // ARMOR: Extra invincibility frames
+            const baseInvincibility = 90;
+            const armorBonus = progUpgrades.armorFrames || 0;
+            player.invincible = baseInvincibility + armorBonus;
+
+            createExplosion(player.x + player.width/2, player.y + player.height/2, false);
+            playSound('hit');
+            updateUI();
+
+            if (lives <= 0) {
+                gameOver();
+            }
+
+            return true; // Damage taken
+        }
+
         const MAX_DEBRIS = 50;
 
         function spawnDebris(x, y, count) {
@@ -3717,7 +3759,7 @@
                 o.rotation += 0.03;
 
                 // Collision with player
-                if (player && player.invincible === 0 && activePowerups.shield === 0 && activePowerups.ghost === 0) {
+                if (player) {
                     const px = player.x + player.width / 2;
                     const py = player.y + player.height / 2;
                     const ox = o.x + o.width / 2;
@@ -3725,13 +3767,9 @@
                     const dist = Math.hypot(px - ox, py - oy);
 
                     if (dist < (player.width + o.width) / 2.5) {
-                        lives--;
-                        player.invincible = 90;
-                        createExplosion(player.x + player.width / 2, player.y + player.height / 2, false);
-                        playSound('hit');
-                        updateUI();
-                        if (lives <= 0) gameOver();
-                        return false;
+                        if (takeDamage(1)) {
+                            return false;
+                        }
                     }
                 }
 
@@ -5149,6 +5187,22 @@
                 weather.thunderTimer = 20;
             }
 
+            // SKILL: REGEN - slow health regeneration
+            const skillEffectsRegen = getAllSkillEffects();
+            if (skillEffectsRegen.regenRate && lives < maxLives) {
+                gameStats.regenAccumulator += skillEffectsRegen.regenRate;
+                if (gameStats.regenAccumulator >= 1) {
+                    gameStats.regenAccumulator = 0;
+                    lives++;
+                    floatingTexts.push({
+                        x: player.x + player.width/2, y: player.y - 30,
+                        text: '💚 REGEN +1', color: '#0f0', life: 60, size: 12
+                    });
+                    playSound('powerup');
+                    updateUI();
+                }
+            }
+
             // Player animation
             if (frame % 3 === 0) player.animFrame = (player.animFrame + 1) % 8;
 
@@ -5579,15 +5633,11 @@
                         b.laserSweep.timer--;
 
                         // Damage player if in laser path
-                        if (player.invincible === 0 && activePowerups.shield === 0 &&
-                            Math.abs(player.y + player.height/2 - b.laserSweep.y) < 15 &&
+                        if (Math.abs(player.y + player.height/2 - b.laserSweep.y) < 15 &&
                             player.x < b.x + 30) {
-                            lives--;
-                            player.invincible = 90;
-                            gameStats.bossHitsTaken++;
-                            createExplosion(player.x + player.width/2, player.y + player.height/2);
-                            updateUI();
-                            if (lives <= 0) gameOver();
+                            if (takeDamage(1)) {
+                                gameStats.bossHitsTaken++;
+                            }
                         }
 
                         // Reverse or end
@@ -5608,13 +5658,11 @@
                     // Bomb bullets explode on ground
                     if (bullet.isBomb && bullet.y > canvas.height - 100) {
                         createExplosion(bullet.x, bullet.y, true);
-                        // Area damage to player (not if ghost)
-                        if (Math.abs(player.x - bullet.x) < 80 && player.invincible === 0 && activePowerups.shield === 0 && activePowerups.ghost === 0) {
-                            lives--;
-                            player.invincible = 90;
-                            gameStats.bossHitsTaken++;
-                            updateUI();
-                            if (lives <= 0) gameOver();
+                        // Area damage to player
+                        if (Math.abs(player.x - bullet.x) < 80) {
+                            if (takeDamage(1)) {
+                                gameStats.bossHitsTaken++;
+                            }
                         }
                         return false;
                     }
@@ -5628,14 +5676,11 @@
                         return bullet.x > -30 && bullet.x < canvas.width + 30 && bullet.y > -30 && bullet.y < canvas.height + 30;
                     }
 
-                    if (player.invincible === 0 && activePowerups.shield === 0 && checkCollision(bullet, player)) {
-                        lives--;
-                        player.invincible = 90;
-                        gameStats.bossHitsTaken++;
-                        createExplosion(player.x + player.width/2, player.y + player.height/2);
-                        updateUI();
-                        if (lives <= 0) gameOver();
-                        return false;
+                    if (checkCollision(bullet, player)) {
+                        if (takeDamage(1)) {
+                            gameStats.bossHitsTaken++;
+                            return false;
+                        }
                     }
 
                     return bullet.x > -30 && bullet.x < canvas.width + 30 && bullet.y > -30 && bullet.y < canvas.height + 30;
@@ -5728,15 +5773,13 @@
                 mine.armed = mine.timer < 270; // Armed after 0.5 sec
 
                 // Check player collision
-                if (mine.armed && player.invincible === 0 && activePowerups.shield === 0) {
+                if (mine.armed) {
                     const dist = Math.hypot(player.x + player.width/2 - mine.x, player.y + player.height/2 - mine.y);
                     if (dist < mine.radius + 20) {
-                        lives--;
-                        player.invincible = 90;
-                        createExplosion(mine.x, mine.y, true);
-                        updateUI();
-                        if (lives <= 0) gameOver();
-                        return false;
+                        if (takeDamage(1)) {
+                            createExplosion(mine.x, mine.y, true);
+                            return false;
+                        }
                     }
                 }
 
@@ -5804,9 +5847,8 @@
 
                     if (bullet.isBomb && bullet.y > canvas.height - 100) {
                         createExplosion(bullet.x, bullet.y, true);
-                        if (Math.abs(player.x - bullet.x) < 60 && player.invincible === 0 && activePowerups.shield === 0 && activePowerups.ghost === 0) {
-                            lives--; player.invincible = 90; updateUI();
-                            if (lives <= 0) gameOver();
+                        if (Math.abs(player.x - bullet.x) < 60) {
+                            takeDamage(1);
                         }
                         return false;
                     }
@@ -5816,12 +5858,10 @@
                         return bullet.x > -30 && bullet.y < canvas.height + 30;
                     }
 
-                    if (player.invincible === 0 && activePowerups.shield === 0 && checkCollision(bullet, player)) {
-                        lives--; player.invincible = 90;
-                        createExplosion(player.x + player.width/2, player.y + player.height/2);
-                        updateUI();
-                        if (lives <= 0) gameOver();
-                        return false;
+                    if (checkCollision(bullet, player)) {
+                        if (takeDamage(1)) {
+                            return false;
+                        }
                     }
                     return bullet.x > -30 && bullet.y < canvas.height + 30;
                 });
@@ -6006,14 +6046,12 @@
                         });
                     }
                     // Explode on contact!
-                    if (dist < 40 && player.invincible === 0 && activePowerups.shield === 0) {
-                        lives -= 2;
-                        player.invincible = 90;
-                        createExplosion(enemy.x, enemy.y, true);
-                        screenShake = 25;
-                        updateUI();
-                        if (lives <= 0) gameOver();
-                        return false;
+                    if (dist < 40) {
+                        if (takeDamage(2)) {
+                            createExplosion(enemy.x, enemy.y, true);
+                            screenShake = 25;
+                            return false;
+                        }
                     }
                 // === ADVANCED ENEMIES ===
                 } else if (enemy.type === 'phantom') {
@@ -6196,35 +6234,49 @@
                         return bullet.x > -30 && bullet.y > -30 && bullet.y < canvas.height + 30;
                     }
 
-                    if (player.invincible === 0 && activePowerups.shield === 0 && checkCollision(bullet, player)) {
-                        lives--;
-                        player.invincible = 90;
-                        createExplosion(player.x + player.width/2, player.y + player.height/2);
-                        updateUI();
-                        if (lives <= 0) gameOver();
-                        return false;
+                    if (checkCollision(bullet, player)) {
+                        // SKILL: REFLECT - chance to reflect bullets
+                        const reflectSkills = getAllSkillEffects();
+                        if (reflectSkills.reflectChance && Math.random() < reflectSkills.reflectChance) {
+                            // Convert to player bullet that damages enemies!
+                            player.bullets.push({
+                                x: bullet.x,
+                                y: bullet.y,
+                                width: 10,
+                                height: 6,
+                                speed: 15,
+                                damage: 2,
+                                isReflected: true,
+                                color: '#0ff'
+                            });
+                            floatingTexts.push({
+                                x: player.x + player.width/2, y: player.y - 20,
+                                text: '🔄 REFLECT!', color: '#0ff', life: 30, size: 10
+                            });
+                            return false; // Remove enemy bullet
+                        } else if (takeDamage(1)) {
+                            return false;
+                        }
                     }
                     return bullet.x > -30 && bullet.y > -30 && bullet.y < canvas.height + 30;
                 });
 
                 // Collision with player (kamikaze explodes!)
-                if (player.invincible === 0 && activePowerups.shield === 0 && checkCollision(enemy, player)) {
-                    lives--;
-                    player.invincible = 90;
+                if (checkCollision(enemy, player)) {
                     const isKamikaze = enemy.type === 'kamikaze';
-                    createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, isKamikaze);
-                    if (isKamikaze) {
-                        screenShake = 20;
-                        // Chain reaction - damage nearby enemies
-                        enemies.forEach(e => {
-                            if (e !== enemy && Math.hypot(e.x - enemy.x, e.y - enemy.y) < 80) {
-                                e.health -= 2;
-                            }
-                        });
+                    if (takeDamage(1)) {
+                        createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2, isKamikaze);
+                        if (isKamikaze) {
+                            screenShake = 20;
+                            // Chain reaction - damage nearby enemies
+                            enemies.forEach(e => {
+                                if (e !== enemy && Math.hypot(e.x - enemy.x, e.y - enemy.y) < 80) {
+                                    e.health -= 2;
+                                }
+                            });
+                        }
+                        return false;
                     }
-                    updateUI();
-                    if (lives <= 0) gameOver();
-                    return false;
                 }
 
                 // Hit by player bullet
@@ -6293,11 +6345,36 @@
                             continue; // Don't damage the reflector
                         }
 
-                        // Piercing - bullet goes through (but reduce damage slightly)
-                        if (activePowerups.piercing > 0) {
+                        // Get skill effects for piercing and explosive
+                        const bulletSkills = getAllSkillEffects();
+
+                        // SKILL: EXPLOSIVE - bullets explode on hit
+                        if (bulletSkills.explosiveRounds) {
+                            const explosionRadius = bulletSkills.explosionRadius || 30;
+                            createExplosion(bullet.x, bullet.y, false);
+                            // Damage nearby enemies
+                            enemies.forEach(e => {
+                                if (e !== enemy) {
+                                    const dist = Math.hypot(e.x + e.width/2 - bullet.x, e.y + e.height/2 - bullet.y);
+                                    if (dist < explosionRadius * 2) {
+                                        e.health -= 1;
+                                        floatingTexts.push({
+                                            x: e.x + e.width/2, y: e.y - 10,
+                                            text: '💥', color: '#f80', life: 20, size: 10
+                                        });
+                                    }
+                                }
+                            });
+                        }
+
+                        // Piercing - bullet goes through (powerup OR skill)
+                        const hasPiercing = activePowerups.piercing > 0 || bulletSkills.piercingShots;
+                        const maxPierces = bulletSkills.piercingShots || 5;
+
+                        if (hasPiercing) {
                             enemy.health -= (bullet.damage || 1) * 0.8;
                             bullet.pierceCount = (bullet.pierceCount || 0) + 1;
-                            if (bullet.pierceCount >= 5) player.bullets.splice(i, 1); // Max 5 pierces
+                            if (bullet.pierceCount >= maxPierces) player.bullets.splice(i, 1);
                         } else {
                             player.bullets.splice(i, 1);
                             enemy.health -= bullet.damage || 1;
@@ -6433,10 +6510,15 @@
                 p.x -= 1.5 * speedMod;
                 p.pulse = (p.pulse + 0.1) % (Math.PI * 2);
 
-                // Magnet effect
-                if (perks.magnet > 0) {
+                // Magnet effect (perks + permanent upgrade)
+                const progUpgrades = getAllUpgradeEffects();
+                const upgradeMagnetRange = progUpgrades.magnetRange || 0;
+                const perkMagnetRange = perks.magnet * 150;
+                const totalMagnetRange = Math.max(upgradeMagnetRange, perkMagnetRange);
+
+                if (totalMagnetRange > 0) {
                     const dist = Math.hypot(player.x - p.x, player.y - p.y);
-                    if (dist < 150 * perks.magnet) {
+                    if (dist < totalMagnetRange) {
                         p.x += (player.x - p.x) * 0.05;
                         p.y += (player.y - p.y) * 0.05;
                     }
@@ -7175,14 +7257,10 @@
                         ctx.shadowBlur = 0;
 
                         // Damage player if hit
-                        if (player.invincible === 0 && activePowerups.shield === 0) {
-                            const playerMidY = player.y + player.height/2;
-                            if (Math.abs(playerMidY - laserY) < laserWidth + 15) {
-                                lives--;
-                                player.invincible = 90;
+                        const playerMidY = player.y + player.height/2;
+                        if (Math.abs(playerMidY - laserY) < laserWidth + 15) {
+                            if (takeDamage(1)) {
                                 screenShake = 20;
-                                updateUI();
-                                if (lives <= 0) gameOver();
                             }
                         }
                     }
